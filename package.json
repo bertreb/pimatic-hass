@@ -1,0 +1,33 @@
+{
+  "name": "pimatic-hass",
+  "description": "Home Assistant connector for Pimatic",
+  "author": {
+    "name": "Bert Gierveld",
+    "email": "gitbertreb@gmail.com",
+    "url": "https://github.com/bertreb"
+  },
+  "main": "mqtt-api",
+  "homepage": "https://github.com/bertreb/pimatic-hass.git",
+  "keywords": [
+    "pimatic",
+    "api",
+    "hass"
+  ],
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bertreb/pimatic-hass.git"
+  },
+  "dependencies": {
+    "lodash": "^4.17.15",
+    "mqtt": "^3.0.0"
+  },
+  "configSchema": "hass-config-schema.coffee",
+  "peerDependencies": {
+    "pimatic": "0.9.*"
+  },
+  "engines": {
+    "node": ">=4",
+    "npm": ">=2"
+  }
+}
