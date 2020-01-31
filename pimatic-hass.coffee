@@ -67,8 +67,6 @@ module.exports = (env) =>
       ###
       @mqttOptions["protocolId"] = "MQTT" # @config?.mqttProtocol or @plugin.configProperties.mqttProtocol.default
 
-      #if @client.connected
-      #  @client.end()
       @client = new mqtt.connect(@mqttOptions)
       env.logger.debug "Connecting to MQTT server..."
 
@@ -100,9 +98,6 @@ module.exports = (env) =>
         _adapter = @getAdapter(topic)
         env.logger.debug "message received with topic: " + topic
         if _adapter?
-          #env.logger.info "message: " + JSON.stringify(message)
-          #for c in message
-          #  env.logger.info String c
           newState = _adapter.handleMessage(packet)
 
       @client.on 'pingreq', () =>
@@ -197,36 +192,6 @@ module.exports = (env) =>
               reject()
             )
       )
-
-    ###
-    _addDevice: (device) =>
-      return new Promise((resolve,reject) =>
-        env.logger.info "AddDevice1: " + device.id
-        if device instanceof env.devices.DimmerActuator
-          #device type implemented
-        else if device instanceof env.devices.SwitchActuator
-          env.logger.info "AddDevice2: " + device.id
-          unless @client?
-            env.logger.info "Can add adapter, @client inknown"
-            reject()
-          _newAdapter = new switchAdapter(device, @client, @hassTopic)
-          if @adapters[device.id]?
-            @adapters[device.id].destroy()
-          @adapters[device.id] = _newAdapter
-          resolve(_newAdapter)
-        else if device instanceof env.devices.ButtonsDevice
-          #device type implemented
-        else if device instanceof env.devices.HeatingThermostat
-          #throw new Error "Device type HeatingThermostat not implemented"
-        else if device instanceof env.devices.ShutterController
-          #throw new Error "Device type ShutterController not implemented"
-        else
-          #throw new Error "Init: Device type of device #{_device.id} does not exist"
-        #env.logger.info "Devices: " + JSON.stringify(@adapters,null,2)
-        reject()
-      )
-    ###
-
 
     getAdapter: (topic) =>
       try
