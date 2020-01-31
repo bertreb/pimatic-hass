@@ -1,8 +1,8 @@
 module.exports = {
-  title: "pimatic-mqtt-api device config schemas"  
-  MqttApiDevice: {
-    title: "pimatic mqtt api"
-    description: "Mqtt api device"
+  title: "pimatic-hass device config schemas"  
+  HassDevice: {
+    title: "pimatic hass"
+    description: "Hass device"
     type: "object"
     extensions: ["xLink", "xOnLabel", "xOffLabel"]
     properties:

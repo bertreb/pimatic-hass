@@ -6,7 +6,7 @@
     "email": "gitbertreb@gmail.com",
     "url": "https://github.com/bertreb"
   },
-  "main": "mqtt-api",
+  "main": "pimatic-hass",
   "homepage": "https://github.com/bertreb/pimatic-hass.git",
   "keywords": [
     "pimatic",
@@ -19,6 +19,7 @@
     "url": "git+https://github.com/bertreb/pimatic-hass.git"
   },
   "dependencies": {
+    "color": "^3.1.2",
     "lodash": "^4.17.15",
     "mqtt": "^3.0.0"
   },

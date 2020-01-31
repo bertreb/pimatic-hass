@@ -3,22 +3,23 @@ module.exports = (env) =>
   mqtt = require('mqtt')
   _ = require("lodash")
   switchAdapter = require('./adapters/switch')(env)
-  #lightAdapter = require('./adapters/light')(env)
-  #buttonAdapter = require('./adapters/button')(env)
+  lightAdapter = require('./adapters/light')(env)
+  #rgblightAdapter = require('./adapters/rgblight')(env)
+  sensorAdapter = require('./adapters/sensor')(env)
   #shutterAdapter = require('./adapters/shutter')(env)
 
-  class MqttApiPlugin extends env.plugins.Plugin
+  class HassPlugin extends env.plugins.Plugin
 
     init: (app, @framework, @config) =>
-      pluginConfigDef = require("./mqtt-api-config-schema.coffee")
+      pluginConfigDef = require("./hass-config-schema.coffee")
       deviceConfigDef = require("./device-config-schema")
-      @framework.deviceManager.registerDeviceClass('MqttApiDevice', {
-        configDef: deviceConfigDef.MqttApiDevice,
-        createCallback: (config, lastState) => new MqttApiDevice(config, lastState, @framework, @)
+      @framework.deviceManager.registerDeviceClass('HassDevice', {
+        configDef: deviceConfigDef.HassDevice,
+        createCallback: (config, lastState) => new HassDevice(config, lastState, @framework, @)
       })
 
 
-  class MqttApiDevice extends env.devices.PresenceSensor
+  class HassDevice extends env.devices.PresenceSensor
 
     constructor: (@config, lastState, @framework, @plugin) ->
       @id = @config.id
@@ -28,8 +29,9 @@ module.exports = (env) =>
         return
 
       @framework.on 'destroy', () =>
-        for i, _adapter of @adapters
-          _adapter.setAvailability(off)        
+        @destroy()
+        #for i, _adapter of @adapters
+        #  _adapter.setAvailability(off)        
 
       for _d in @config.devices
         do(_d) =>
@@ -48,8 +50,8 @@ module.exports = (env) =>
           clientId: 'pimatic_' + Math.random().toString(16).substr(2, 8)
           #protocolVersion: 4 # @plugin.config?.mqttProtocolVersion or 4
           #queueQoSZero: true
-          #keepalive: 180
-          #clean: true
+          keepalive: 180
+          clean: true
           rejectUnauthorized: false
           reconnectPeriod: 15000
           debug: true # @plugin.config?.debug or false
@@ -65,12 +67,15 @@ module.exports = (env) =>
       ###
       @mqttOptions["protocolId"] = "MQTT" # @config?.mqttProtocol or @plugin.configProperties.mqttProtocol.default
 
+      #if @client.connected
+      #  @client.end()
       @client = new mqtt.connect(@mqttOptions)
       env.logger.debug "Connecting to MQTT server..."
 
-      unless @client.connected
-        @client.on 'connect', () =>
-          env.logger.debug "Successfully connected to MQTT server"
+      @client.on 'connect', () =>
+        env.logger.debug "Successfully connected to MQTT server"
+        @framework.variableManager.waitForInit()
+        .then(()=>
           @_initDevices()
           .then(() =>
             @_setPresence(true)
@@ -81,18 +86,23 @@ module.exports = (env) =>
               env.logger.debug "Succesfully subscribed to #{@hassTopic}: " + JSON.stringify(granted,null,2)
               for i, _adapter of @adapters
                 _adapter.publishDiscovery()
+                _adapter.publishState()
           ).catch((err)=>
             env.logger.error "Error initdevices: " + err
           )
+        )
 
       @client.on 'message', (topic, message, packet) =>
+        #env.logger.debug "Packet received " + JSON.stringify(packet.payload,null,2)
         if topic.endsWith("/config")
-          env.logger.debug "Config received no action"
+          env.logger.debug "Config received no action: " + String(packet.payload)
           return
         _adapter = @getAdapter(topic)
         env.logger.debug "message received with topic: " + topic
         if _adapter?
-          #env.logger.info "_adapter2: " + _adapter
+          #env.logger.info "message: " + JSON.stringify(message)
+          #for c in message
+          #  env.logger.info String c
           newState = _adapter.handleMessage(packet)
 
       @client.on 'pingreq', () =>
@@ -120,7 +130,6 @@ module.exports = (env) =>
           delete @adapters[i]
 
       @framework.on 'deviceAdded', (device) =>
-        return
         @framework.variableManager.waitForInit()
         .then(() =>
           env.logger.info "Device '#{device.id}' checked for autodiscovery"
@@ -129,6 +138,10 @@ module.exports = (env) =>
             .then((newAdapter) =>
               env.logger.info "Device '#{newAdapter.id}' added"
               newAdapter.publishDiscovery()
+              .then(() =>
+                newAdapter.publishState()
+              ).catch((err) =>
+              )
             ).catch((err)=>
             )
         ).catch((err) =>
@@ -136,7 +149,56 @@ module.exports = (env) =>
 
       super()
 
+    _addDevice: (device) =>
+      return new Promise((resolve,reject) =>
+        if @adapters[device.id]?
+          reject("adapter already exists")
+        #if device.config.class is "MilightRGBWZone" or device.config.class is "MilightFullColorZone"
+        #  _newAdapter = new rgblightAdapter(device, @client, @hassTopic)
+        #  @adapters[device.id] = _newAdapter
+        #  resolve(_newAdapter)
+        if device instanceof env.devices.DimmerActuator
+          _newAdapter = new lightAdapter(device, @client, @hassTopic)
+          @adapters[device.id] = _newAdapter
+          resolve(_newAdapter)
+        else if device instanceof env.devices.SwitchActuator
+          _newAdapter = new switchAdapter(device, @client, @hassTopic)
+          @adapters[device.id] = _newAdapter
+          resolve(_newAdapter)
+        else if device instanceof env.devices.Device and device.hasAttribute("temperature") and device.hasAttribute("humidity")
+          _newAdapter = new sensorAdapter(device, @client, @hassTopic)
+          @adapters[device.id] = _newAdapter
+          resolve(_newAdapter)
+        else if device instanceof env.devices.HeatingThermostat
+          throw new Error "Device type HeatingThermostat not implemented"
+        else if device instanceof env.devices.ShutterController
+          throw new Error "Device type ShutterController not implemented"
+        else
+          throw new Error "Init: Device type of device #{device.id} does not exist"
+        #env.logger.info "Devices: " + JSON.stringify(@adapters,null,2)
+        reject()
+      )
 
+    _initDevices: () =>
+      return new Promise((resolve,reject) =>
+        @adapters = {}
+        for _device,i in @config.devices
+          device = @framework.deviceManager.getDeviceById(_device)
+          unless device?
+            env.logger.debug 'No devices in config'
+            reject()
+          do (device) =>
+            @_addDevice(device)
+            .then(()=>
+              env.logger.debug "Device '#{device.id}' added"
+              resolve()
+            ).catch((err)=>
+              env.logger.error "Error " + err
+              reject()
+            )
+      )
+
+    ###
     _addDevice: (device) =>
       return new Promise((resolve,reject) =>
         env.logger.info "AddDevice1: " + device.id
@@ -163,37 +225,8 @@ module.exports = (env) =>
         #env.logger.info "Devices: " + JSON.stringify(@adapters,null,2)
         reject()
       )
+    ###
 
-    _initDevices: () =>
-      return new Promise((resolve,reject) =>
-        @adapters = {}
-        for _device,i in @config.devices
-          env.logger.info "device: " + _device
-          device = @framework.deviceManager.getDeviceById(_device)
-          unless device?
-            env.logger.debug 'No devices found!'
-            reject()
-          do (device) =>
-            if @adapters[device.id]?
-              @adapter[device.id].destroy()
-            #check device is part of exposed plugins (not yet)
-            if device instanceof env.devices.DimmerActuator
-              #device type implemented
-            else if device instanceof env.devices.SwitchActuator
-              @adapters[device.id] = new switchAdapter(device, @client, @hassTopic)
-              env.logger.debug "Adapter for device #{device.id} created"
-              #resolve()
-            else if device instanceof env.devices.ButtonsDevice
-              #device type implemented
-            else if device instanceof env.devices.HeatingThermostat
-              #throw new Error "Device type HeatingThermostat not implemented"
-            else if device instanceof env.devices.ShutterController
-              #throw new Error "Device type ShutterController not implemented"
-            else
-              #throw new Error "Init: Device type of device #{_device.id} does not exist"
-            #env.logger.info "Devices: " + JSON.stringify(@adapters,null,2)
-        resolve()
-      )
 
     getAdapter: (topic) =>
       try
@@ -215,8 +248,8 @@ module.exports = (env) =>
     destroy: () =>
       for i, _adapter of @adapters
         _adapter.destroy()
-        #delete @adapters[i]
-      #@client.end()
+        delete @adapters[i]
+      @client.end()
       super()
 
-  return new MqttApiPlugin
+  return new HassPlugin
