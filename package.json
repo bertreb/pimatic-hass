@@ -10,8 +10,9 @@
   "homepage": "https://github.com/bertreb/pimatic-hass.git",
   "keywords": [
     "pimatic",
-    "api",
-    "hass"
+    "hass",
+    "home assistant",
+    "mqtt"
   ],
   "version": "0.0.1",
   "repository": {
