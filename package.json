@@ -18,6 +18,16 @@
     "type": "git",
     "url": "git+https://github.com/bertreb/pimatic-hass.git"
   },
+  "files": [
+    "pimatic-hass.coffee",
+    "pimatic-hass-config-schema.coffee",
+    "device-config-schema.coffee",
+    "adapters/light.coffee",
+    "adapters/switch.coffee",
+    "adapters/sensor.coffee",
+    "README.md",
+    "LICENSE"
+  ],
   "dependencies": {
     "color": "^3.1.2",
     "lodash": "^4.17.15",
