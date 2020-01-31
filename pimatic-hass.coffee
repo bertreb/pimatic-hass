@@ -6,6 +6,7 @@ module.exports = (env) =>
   lightAdapter = require('./adapters/light')(env)
   #rgblightAdapter = require('./adapters/rgblight')(env)
   sensorAdapter = require('./adapters/sensor')(env)
+  binarySensorAdapter = require('./adapters/binarysensor')(env)
   #shutterAdapter = require('./adapters/shutter')(env)
 
   class HassPlugin extends env.plugins.Plugin
@@ -160,8 +161,12 @@ module.exports = (env) =>
           _newAdapter = new switchAdapter(device, @client, @hassTopic)
           @adapters[device.id] = _newAdapter
           resolve(_newAdapter)
-        else if device instanceof env.devices.Device and device.hasAttribute("temperature") and device.hasAttribute("humidity")
+        else if device instanceof env.devices.Sensor and device.hasAttribute("temperature") and device.hasAttribute("humidity")
           _newAdapter = new sensorAdapter(device, @client, @hassTopic)
+          @adapters[device.id] = _newAdapter
+          resolve(_newAdapter)
+        else if device instanceof env.devices.Sensor and (device.hasAttribute("contact") or device.hasAttribute("presence"))
+          _newAdapter = new binarySensorAdapter(device, @client, @hassTopic)
           @adapters[device.id] = _newAdapter
           resolve(_newAdapter)
         else if device instanceof env.devices.HeatingThermostat
@@ -214,7 +219,9 @@ module.exports = (env) =>
       for i, _adapter of @adapters
         _adapter.destroy()
         delete @adapters[i]
-      @client.end()
+      try
+        @client.end()
+      catch err
       super()
 
   return new HassPlugin

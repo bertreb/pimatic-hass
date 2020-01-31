@@ -26,6 +26,7 @@
     "adapters/light.coffee",
     "adapters/switch.coffee",
     "adapters/sensor.coffee",
+    "adapters/binarysensor.coffee",
     "README.md",
     "LICENSE"
   ],
