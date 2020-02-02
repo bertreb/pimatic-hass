@@ -17,10 +17,10 @@ module.exports = {
       description: "The portnumber of the mqtt api"
       type: "number"
       default: 1883
-    hassTopic:
+    discovery_prefix:
       description: "The discovery topic for hass"
       type: "string"
-      default: "pimatic"
+      default: "hass"
     debug:
       description: "Debug mode. Writes debug messages to the pimatic log, if set to true."
       type: "boolean"

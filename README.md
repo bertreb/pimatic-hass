@@ -19,7 +19,7 @@ mqtt:
   discovery: true
   discovery_prefix: hass
 ```
-It's important to use 'hass' as the discovery_prefix, otherwise the automatic installation of devices will not work.
+It's important to use a discovery_prefix, thats the same as the discovery_prefix you are using in the pimatic plugin. Otherwise the automatic installation of devices will not work.
 
 Than you add the MQTT integration in Home Assistant.
 Goto to the settings menu and select integrations. Pusg the add button (+) and type mqtt.
@@ -30,6 +30,7 @@ The preparation of Home assitant is done!
 
 ### Preparing Pimatic
 Install the Hass plugin.In the plugin you configure the ip address, port, username and password of the mqtt server.
+In the field "discovery_prefix" add the same name you used in the mqtt configuration of Hass or leave it empty to use the default ("hass")
 If you want you can enable the debug option and read in the logfile log message screen extra debug info.
 After succeful installion and configuration of the Hass plugin you can add a Hass device.
 

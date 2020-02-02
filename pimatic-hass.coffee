@@ -41,7 +41,7 @@ module.exports = (env) =>
           unless _dev?
             throw new Error ("Pimatic device #{_d} does not exsist")
 
-      @hassTopic = @plugin.config.hassTopic ? @plugin.pluginConfigDef.hassTopic.default
+      @discovery_prefix = @plugin.config.discovery_prefix ? @plugin.pluginConfigDef.discovery_prefix.default
 
       @mqttOptions =
           host: @plugin.config.mqttServer ? ""
@@ -78,11 +78,11 @@ module.exports = (env) =>
           @_initDevices()
           .then(() =>
             @_setPresence(true)
-            @client.subscribe @hassTopic + "/#" , (err, granted) =>
+            @client.subscribe @discovery_prefix + "/#" , (err, granted) =>
               if err
                 env.logger.error "Error in initdevices " + err
                 return
-              env.logger.debug "Succesfully subscribed to #{@hassTopic}: " + JSON.stringify(granted,null,2)
+              env.logger.debug "Succesfully subscribed to #{@discovery_prefix}: " + JSON.stringify(granted,null,2)
               for i, _adapter of @adapters
                 _adapter.publishDiscovery()
                 _adapter.publishState()
@@ -150,23 +150,23 @@ module.exports = (env) =>
         if @adapters[device.id]?
           reject("adapter already exists")
         #if device.config.class is "MilightRGBWZone" or device.config.class is "MilightFullColorZone"
-        #  _newAdapter = new rgblightAdapter(device, @client, @hassTopic)
+        #  _newAdapter = new rgblightAdapter(device, @client, @discovery_prefix)
         #  @adapters[device.id] = _newAdapter
         #  resolve(_newAdapter)
         if device instanceof env.devices.DimmerActuator
-          _newAdapter = new lightAdapter(device, @client, @hassTopic)
+          _newAdapter = new lightAdapter(device, @client, @discovery_prefix)
           @adapters[device.id] = _newAdapter
           resolve(_newAdapter)
         else if device instanceof env.devices.SwitchActuator
-          _newAdapter = new switchAdapter(device, @client, @hassTopic)
+          _newAdapter = new switchAdapter(device, @client, @discovery_prefix)
           @adapters[device.id] = _newAdapter
           resolve(_newAdapter)
         else if device instanceof env.devices.Sensor and device.hasAttribute("temperature") and device.hasAttribute("humidity")
-          _newAdapter = new sensorAdapter(device, @client, @hassTopic)
+          _newAdapter = new sensorAdapter(device, @client, @discovery_prefix)
           @adapters[device.id] = _newAdapter
           resolve(_newAdapter)
         else if device instanceof env.devices.Sensor and (device.hasAttribute("contact") or device.hasAttribute("presence"))
-          _newAdapter = new binarySensorAdapter(device, @client, @hassTopic)
+          _newAdapter = new binarySensorAdapter(device, @client, @discovery_prefix)
           @adapters[device.id] = _newAdapter
           resolve(_newAdapter)
         else if device instanceof env.devices.HeatingThermostat
@@ -201,8 +201,8 @@ module.exports = (env) =>
     getAdapter: (topic) =>
       try
         _items = topic.split('/')
-        if _items[0] isnt @hassTopic
-          env.logger.debug "hassTopic not found " + _items[0]
+        if _items[0] isnt @discovery_prefix
+          env.logger.debug "#{@discovery_prefix} not found " + _items[0]
           return null
         if _items[1]?
           _adapter = @adapters[_items[1]]
