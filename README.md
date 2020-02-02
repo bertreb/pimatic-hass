@@ -1,8 +1,7 @@
 # pimatic-hass
 Pimatic plugin for making Pimatic devices available in Home Assistant
 
-This plugin is using the mqtt discovery function of Home Assistant (Hass) to automaticaly add pimatic devices.
-For actionable devices like switch or light the Pimatic devices are synced with Home Assistant. When you change is value in Pimatic or in Home Assitant the states are synced. For readonly devices the values are only exposed readable towards Home Assistant.
+This plugin is using the mqtt discovery function of Home Assistant (Hass) to automaticaly add pimatic devices. For actionable devices like switch or light the Pimatic devices are synced with Home Assistant. For readonly devices the values are only exposed readable towards Home Assistant.
 
 The communication between Pimatic and Hass is done via mqtt. You need to use a mqtt server that is preferably on your local netwerk.
 
