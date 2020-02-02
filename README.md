@@ -6,7 +6,7 @@ For actionable devices like switch or light the Pimatic devices are synced with 
 
 The communication between Pimatic and Hass is done via mqtt. You need to use a mqtt server that is preferably on your local netwerk.
 
-## Preparing Home Assistant
+### Preparing Home Assistant
 The whole setup of Home Assistant is out of scope of this plugin. So the starting point is a working Hass system with configurator installed/enabled.
 In the configurator you open the file "configurations.yaml" and add the following lines.
 
@@ -29,12 +29,12 @@ Fill in the MQTT server parameters from your mqtt server. Save and exit.
 
 The preparation of Home assitant is done! 
 
-## Preparing Pimatic
+### Preparing Pimatic
 Install the Hass plugin.In the plugin you configure the ip address, port, username and password of the mqtt server.
 If you want you can enable the debug option and read in the logfile log message screen extra debug info.
 After succeful installion and configuration of the Hass plugin you can add a Hass device.
 
-## Configuring the HASS device
+### Configuring the HASS device
 
 In the Hass device you can add Pimatic devices by there pimatic-id. No further configuration is needed.
 Aftr saving the device config, the connection to Home Assistant is established and per pimati device that you added in the device config a compatible device is created in Home Assistant.
@@ -51,7 +51,7 @@ Currently the following pimatic devices are supported.
 |Contact  |    ->   | Binary   | state             |
 |Temp/hum |    ->   | Binary   | temp, humidity    |
 
-## Adding Pimatic devices in the Hass Gui
+### Adding Pimatic devices in the Hass Gui
 In Home Assistant the automatic created Pimatic devices can be added via the 'configure UI' option. 
 Via the add button (+) you can select a device type and search on device name. 
 The Hass device name is \<hass device type\>.\<pimatic id\>
