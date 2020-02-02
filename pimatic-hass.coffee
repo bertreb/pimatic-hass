@@ -153,7 +153,7 @@ module.exports = (env) =>
         #  _newAdapter = new rgblightAdapter(device, @client, @discovery_prefix)
         #  @adapters[device.id] = _newAdapter
         #  resolve(_newAdapter)
-        if device instanceof env.devices.DimmerActuator
+        if device instanceof env.devices.DimmerActuator or device.hasAttribute("changeDimlevelTo")
           _newAdapter = new lightAdapter(device, @client, @discovery_prefix)
           @adapters[device.id] = _newAdapter
           resolve(_newAdapter)
