@@ -55,7 +55,7 @@ In Home Assistant the automatic created Pimatic devices can be added via the 'co
 Via the add button (+) you can select a device type and search on device name.
 The Hass device name is \<hass device type\>.\<pimatic-id\> and can when searching to add a device, also be found under the friendly name \<pimatic-id\>
 
-For example adding a pimatic presence sensor with id 'presence-livingroom'. In Home Assistant the device gets the following name: **binary_sensor.presence-livingroom** or **presence-livingroom** (in the add device search).
+For example adding a pimatic presence sensor with id **presence-livingroom**. In Home Assistant the device gets the following name **binary_sensor.presence-livingroom** or **presence-livingroom** (in the add device search).
 
 
 ---
