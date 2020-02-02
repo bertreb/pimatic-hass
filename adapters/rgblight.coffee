@@ -2,7 +2,7 @@ module.exports = (env) ->
   Promise = env.require 'bluebird'
   assert = env.require 'cassert'
   events = require 'events'
-  Color = require('color')
+  convert = require('color-convert')
 
   class RGBLightAdapter extends events.EventEmitter
 
@@ -14,6 +14,9 @@ module.exports = (env) ->
       @client = client
       @pimaticId = pimaticId
       @discoveryId = pimaticId
+
+      @saturation = 0
+      @lightness = 0
       @publishState()
 
       @dimlevelHandler = (dimlevel) =>
@@ -28,6 +31,7 @@ module.exports = (env) ->
 
       @hueHandler = (hue) =>
         env.logger.debug "Hue change dimmer: " + hue
+        @hueEventTriggered = true
         @publishState()
       @device.on 'hue', @hueHandler
 
@@ -39,11 +43,38 @@ module.exports = (env) ->
       _value = packet.payload
 
       env.logger.debug "Action handlemessage rgblight " + _command + ", value " + _value
-      switch _command
-        when "brightness"
-          _newDimlevel = map((Number _value),0,255,0,100)
+      try
+        _parsedValue = JSON.parse(_value)
+        env.logger.info "_parsedValue.state: " + JSON.stringify(_parsedValue)
+      catch err
+        env.logger.error "No valid json received " + err
+        return
+
+      if _command == "set"
+        if _parsedValue.state?
+          if (String _parsedValue.state) == "ON" then _newState = on else _newState = off
+          @device.getState()
+          .then((state)=>
+            env.logger.info "_newState: " + _newState + ", state: " + state
+            unless _newState is state
+              if _newState is on then @device.changeDimlevelTo(100)
+              if _newState is off then @device.changeDimlevelTo(0)
+              @device.changeStateTo(_newState)
+              .then(()=>
+                @publishState()
+              ).catch(()=>
+              )
+          ).catch((err)=>
+            env.logger.error "Error in getState: " + err
+          )
+        else
+          env.logger.info "no handling yet"
+        
+        if _parsedValue.brightness?
+          _newDimlevel = map((Number _parsedValue.brightness),0,255,0,100)
           @device.getDimlevel()
           .then((dimlevel) =>
+            env.logger.info "_newDimlevel: " + _newDimlevel + ", dimlevel: " + dimlevel
             unless _newDimlevel is dimlevel
               @device.getState()
               .then((state)=>
@@ -56,52 +87,44 @@ module.exports = (env) ->
               )
           ).catch((err)=>
           )
-        when "switch"
-          if (String _value) == "ON" then _newState = on else _newState = off
-          @device.getState()
-          .then((state)=>
-            unless _newState is state
-              if _newState is on then @device.changeDimlevelTo(100)
-              if _newState is off then @device.changeDimlevelTo(0)
-              @device.changeStateTo(_newState)
-              .then(()=>
-                @publishState()
-              ).catch(()=>
-              )
-          ).catch(()=>
-          )
-        when "rgb"
-          env.logger.info "RGB: " + String Buffer.from(_value)
-          _newHue = (Color.rgb(_value)).hue()
-          env.logger.info "HUE: " + _newHue
-          return
+    
+        if _parsedValue.color?
+          _newHexColor = convert.rgb.hex(_parsedValue.color.r,_parsedValue.color.g,_parsedValue.color.b)
+          _newHsl = convert.rgb.hsl(_parsedValue.color.r,_parsedValue.color.g,_parsedValue.color.b)
+          _newHue = _newHsl[0]
+          env.logger.info "_newHsl: " + _newHsl
+          @saturation = _newHsl[1]
+          @lightness = _newHsl[2]
+          env.logger.info "@saturation: " + @saturation + ", @lightness: " + @lightness + ", newHex " + _newHexColor
           @device.getHue()
           .then((hue) =>
-            unless _newHue is hue
+            env.logger.info ", _newHue: " + _newHue + ", hue: " + hue # _newHue + ", hue: " + hue  
+            unless _newHue == hue
               @device.changeHueTo(_newHue)
               .then(()=>
                 @publishState()
-              ).catch(()=>
               )
           )
-        else
-          env.logger.debug "Action '#{_command}' unknown"
+
       return
 
     clearDiscovery: () =>
-      _topic = @discoveryId + '/light/' + @device.id + '/config'
+      _topic = @discoveryId + '/' + @device.id + '/config'
       env.logger.debug "Discovery cleared _topic: " + _topic 
       @client.publish(_topic, null)
 
     publishDiscovery: () =>
       _config = 
         name: @device.id
-        cmd_t: @discoveryId + '/' + @device.id + '/switch'
-        stat_t: @discoveryId + '/' + @device.id + '/status'
-        brightness_state_topic: @discoveryId + '/' + @device.id + '/brightness'
-        brightness_command_topic: @discoveryId + '/' + @device.id + '/brightness/set'
-        rgb_state_topic: @discoveryId + '/' + @device.id + '/rgb'
-        rgb_command_topic: @discoveryId + '/' + @device.id + '/rgb/set'
+        cmd_t: @discoveryId + '/' + @device.id + '/set'
+        stat_t: @discoveryId + '/' + @device.id + '/state'
+        schema: "json"
+        brightness: true
+        rgb: true
+        #brightness_state_topic: @discoveryId + '/' + @device.id + '/brightness'
+        #brightness_command_topic: @discoveryId + '/' + @device.id + '/brightness/set'
+        #rgb_state_topic: @discoveryId + '/' + @device.id + '/rgb'
+        #rgb_command_topic: @discoveryId + '/' + @device.id + '/rgb/set'
         #state_value_template: "{{ value_json.state }}"
         #brightness_value_template: "{{ value_json.brightness }}"
         #rgb_value_template: "{{ value_json.rgb | join(',') }}"
@@ -118,33 +141,67 @@ module.exports = (env) ->
       @device.getState()
       .then((state)=>
         if state then _state = "ON" else _state = "OFF"
-        _topic = @pimaticId + '/' + @device.id  + '/status'
-        env.logger.debug "Publish state: " + _topic + ", _state: " + _state
-        @client.publish(_topic, String _state)
-      )
-      @device.getDimlevel()
-      .then((dimlevel)=>
-        _topic2 = @pimaticId + '/' + @device.id + '/brightness'
-        _dimlevel = map(dimlevel,0,100,0,255)
-        env.logger.debug "Publish dimlevel: " + _topic2 + ", _dimlevel: " + _dimlevel
-        @client.publish(_topic2, String _dimlevel)
-      )
-      return
-      @device.getHue()
-      .then((hue)=>
-        _topic3 = @pimaticId + '/' + @device.id + '/rgb'
-        _hue = hue # map(dimlevel,0,100,0,255)
-        env.logger.debug "Publish dimlevel: " + _topic3 + ", hue: " + JSON.stringify(_hue)
-        _payload = 
-          rgb: 
-            r: 127
-            g: 0
-            b: 200
-        @client.publish(_topic3, Buffer.from(_payload))
+        @device.getDimlevel()
+        .then((dimlevel)=>
+          _dimlevel = map(dimlevel,0,100,0,255)
+          @device.getHue()
+          .then((hue)=>
+            _topic = @pimaticId + '/' + @device.id + '/state'
+            _rgb = convert.hsl.rgb(hue, @saturation, @lightness)
+            env.logger.debug "RGB to publish: " + _rgb
+            _payload =
+              state: _state
+              brightness: _dimlevel
+              color: 
+                r: _rgb[0]
+                g: _rgb[1]
+                b: _rgb[2]
+            env.logger.debug "Publish colorlight payload: " + JSON.stringify(_payload)
+            @client.publish(_topic, JSON.stringify(_payload))
+          ).catch((err)=>
+            env.logger.error "error getHue " + err
+          )
+        )
       )
 
     map = (value, low1, high1, low2, high2) ->
       Math.round(low2 + (high2 - low2) * (value - low1) / (high1 - low1))
+
+    rgbToHue = (r, g, b) ->
+      # On the HSV color circle (0..360) the hue value start with red at 0 degrees. We need to convert this
+      # to the Milight color circle which has 256 values with red at position 176
+      hsv = rgbToHsv(r, g, b)
+      (256 + 176 - Math.floor(Number(hsv[0]) / 360.0 * 255.0)) % 256
+    rgbToHsv = (r, g, b) ->
+      r /= 0xFF
+      g /= 0xFF
+      b /= 0xFF
+      max = Math.max(r, g, b)
+      min = Math.min(r, g, b)
+      h = undefined
+      s = undefined
+      v = max
+      d = max - min
+      s = if max == 0 then 0 else d / max
+      if max == min
+        h = 0
+      else
+        switch max
+          when r
+            h = (g - b) / d + (if g < b then 6 else 0)
+          when g
+            h = (b - r) / d + 2
+          when b
+            h = (r - g) / d + 4
+        h = Math.round(h * 60)
+        s = Math.round(s * 100)
+        v = Math.round(v * 100)
+      [
+        h
+        s
+        v
+      ]
+
 
     destroy: ->
       @clearDiscovery()
