@@ -14,14 +14,14 @@
     "home assistant",
     "mqtt"
   ],
-  "version": "0.1.2",
+  "version": "0.1.3",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/bertreb/pimatic-hass.git"
   },
   "files": [
     "pimatic-hass.coffee",
-    "pimatic-hass-config-schema.coffee",
+    "hass-config-schema.coffee",
     "device-config-schema.coffee",
     "adapters/light.coffee",
     "adapters/switch.coffee",
