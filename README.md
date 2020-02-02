@@ -48,14 +48,14 @@ Currently the following pimatic devices are supported.
 |Presence | 1-way   | Binary   | Motion (not) detected
 |Light    | 2-way   | Light    | Light on/off, brightness
 |Contact  | 1-way   | Binary   | opened/closed
-|Temp/hum | 1-way   | Binary   | temperature, humidity 
+|Temp/hum | 1-way   | Binary   | temperature, humidity
 
 ### Adding Pimatic devices in the Hass Gui
 In Home Assistant the automatic created Pimatic devices can be added via the 'configure UI' option.
 Via the add button (+) you can select a device type and search on device name.
 The Hass device name is \<hass device type\>.\<pimatic-id\> and can when searching to add a device, also be found under the friendly name \<pimatic-id\>
 
-For example adding a pimatic presence sensor with id 'presence-livingroom'. In Home Assistant the device gets the following name: binary_sensor.presence-livingroom or presence-livingroom (in the add device search).
+For example adding a pimatic presence sensor with id 'presence-livingroom'. In Home Assistant the device gets the following name: **binary_sensor.presence-livingroom** or **presence-livingroom** (in the add device search).
 
 
 ---
