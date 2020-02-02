@@ -43,7 +43,7 @@ The device type of a Pimatic device determines the Home assistant Device type th
 Currently the following pimatic devices are supported.
 
 |Pimatic  |direction| Hass     | states            |
-|---------|---------|----------|-------------------|
+|----------|:---------:|----------|-------------------|
 |Switch   | 2-way   | Switch   | state             |
 |Presence | 1-way   | Binary   | state             |
 |Light    | 2-way   | Light    | state, brightness |
