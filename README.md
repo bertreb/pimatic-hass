@@ -42,13 +42,13 @@ The device type of a Pimatic device determines the Home assistant Device type th
 
 Currently the following pimatic devices are supported.
 
-|Pimatic  |direction| Hass     | states            |
-|----------|:---------:|----------|-------------------|
-|Switch   | 2-way   | Switch   | state             |
-|Presence | 1-way   | Binary   | state             |
-|Light    | 2-way   | Light    | state, brightness |
-|Contact  | 1-way   | Binary   | state             |
-|Temp/hum | 1-way   | Binary   | temp, humidity    |
+|Pimatic  |direction | Hass | States
+|------------|:--------:|----------|-------------------|
+|Switch   | 2-way   | Switch   | on/off
+|Presence | 1-way   | Binary   | Motion (not) detected
+|Light    | 2-way   | Light    | Light on/off, brightness
+|Contact  | 1-way   | Binary   | opened/closed
+|Temp/hum | 1-way   | Binary   | temp, humidity 
 
 ### Adding Pimatic devices in the Hass Gui
 In Home Assistant the automatic created Pimatic devices can be added via the 'configure UI' option.
