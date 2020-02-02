@@ -2,7 +2,7 @@
 Pimatic plugin for making Pimatic devices available in Home Assistant
 
 This plugin is using the mqtt discovery function of Home Assistant (Hass) to automaticaly add pimatic devices.
-For actionable devices like switch or light the Pimatic devices are synced with Home Assistant. When you change is value in Pimatic or in Home Assitant the states are synced. For readonly devices the values are only exposed readable towards Home Assistant. 
+For actionable devices like switch or light the Pimatic devices are synced with Home Assistant. When you change is value in Pimatic or in Home Assitant the states are synced. For readonly devices the values are only exposed readable towards Home Assistant.
 
 The communication between Pimatic and Hass is done via mqtt. You need to use a mqtt server that is preferably on your local netwerk.
 
@@ -18,16 +18,15 @@ mqtt:
   port: <broker port
   discovery: true
   discovery_prefix: hass
-
 ```
 It's important to use 'hass' as the discovery_prefix, otherwise the automatic installation of devices will not work.
 
 Than you add the MQTT integration in Home Assistant.
-Goto to the settings menu and select integrations. Pusg the add button (+) and type mqtt. 
+Goto to the settings menu and select integrations. Pusg the add button (+) and type mqtt.
 The MQTT integration will showup and you can select and install it.
 Fill in the MQTT server parameters from your mqtt server. Save and exit.
 
-The preparation of Home assitant is done! 
+The preparation of Home assitant is done!
 
 ### Preparing Pimatic
 Install the Hass plugin.In the plugin you configure the ip address, port, username and password of the mqtt server.
@@ -52,9 +51,9 @@ Currently the following pimatic devices are supported.
 |Temp/hum | 1-way   | Binary   | temp, humidity    |
 
 ### Adding Pimatic devices in the Hass Gui
-In Home Assistant the automatic created Pimatic devices can be added via the 'configure UI' option. 
-Via the add button (+) you can select a device type and search on device name. 
-The Hass device name is \<hass device type\>.\<pimatic-id\> and can when searching to add a device, also be found under the friendly name \<pimatic-id\> 
+In Home Assistant the automatic created Pimatic devices can be added via the 'configure UI' option.
+Via the add button (+) you can select a device type and search on device name.
+The Hass device name is \<hass device type\>.\<pimatic-id\> and can when searching to add a device, also be found under the friendly name \<pimatic-id\>
 
 For example adding a pimatic presence sensor with id 'presence-livingroom'. In Home Assistant the device gets the following name: binary_sensor.presence-livingroom or presence-livingroom (in the add device search).
 
