@@ -48,7 +48,7 @@ Currently the following pimatic devices are supported.
 |Presence | 1-way   | Binary   | Motion (not) detected
 |Light    | 2-way   | Light    | Light on/off, brightness
 |Contact  | 1-way   | Binary   | opened/closed
-|Temp/hum | 1-way   | Binary   | temp, humidity 
+|Temp/hum | 1-way   | Binary   | temperature, humidity 
 
 ### Adding Pimatic devices in the Hass Gui
 In Home Assistant the automatic created Pimatic devices can be added via the 'configure UI' option.
