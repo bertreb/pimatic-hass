@@ -45,11 +45,11 @@ Currently the following pimatic devices are supported.
 
 |Pimatic  |direction| Hass     | states            |
 |---------|---------|----------|-------------------|
-|Switch   |   <->   | Switch   | state             |
-|Presence |    ->   | Binary   | state             |
-|Light    |   <->   | Light    | state, brightness |
-|Contact  |    ->   | Binary   | state             |
-|Temp/hum |    ->   | Binary   | temp, humidity    |
+|Switch   | 2-way   | Switch   | state             |
+|Presence | 1-way   | Binary   | state             |
+|Light    | 2-way   | Light    | state, brightness |
+|Contact  | 1-way   | Binary   | state             |
+|Temp/hum | 1-way   | Binary   | temp, humidity    |
 
 ### Adding Pimatic devices in the Hass Gui
 In Home Assistant the automatic created Pimatic devices can be added via the 'configure UI' option. 
