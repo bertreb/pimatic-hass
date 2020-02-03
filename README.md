@@ -60,6 +60,8 @@ For example adding a pimatic presence sensor with id **presence-livingroom**. In
 When you remove a Pimatic device from the config, in Home Assistant the card will get yellow and show the message 'entity not available'. You need to remove the card if you want to get rid of this message. If you leave the card in the Gui the entity becomes active again when you add the same Pimatic device again to the config.
 
 ### Multiple Pimatic systems
-It is possible to connect  multiple Pimatic systems to 1 Home Assistant. Per Pimatic system you configure the devices as described above. Is Home Assistant all the devices from the different Pimatic sysyem are available. When you use the same pimatic-id's for the same type of device in different Pimatic systems, Hass will add a '_\<number\>' to the name. In this situation you need to check which hass device belongs to which Pimatic system.
+
+It is possible to connect  multiple Pimatic systems to 1 Home Assistant. Per Pimatic system you configure the devices as described above. Is Home Assistant all the devices from the different Pimatic sysyem are available. When you use the same pimatic-id's for the same type of device in different Pimatic systems, Hass will add a '\_\<number\>' to the name. In this situation you need to check which hass device belongs to which Pimatic system.
+
 ---
 The plugin is Node v10 compatible and in development. You could backup Pimatic before you are using this plugin!
