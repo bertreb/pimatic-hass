@@ -18,20 +18,20 @@ mqtt:
   discovery: true
   discovery_prefix: hass
 ```
-It's important to use in Hass the same discovery_prefix you are using in the pimatic plugin. Otherwise the automatic installation of devices will not work.
+It's important to use in Hass the same discovery_prefix you are using in the Pimatic plugin. Otherwise the automatic installation of devices will not work.
 
 Now you can add the MQTT integration in Home Assistant.
 Goto to the settings menu and select integrations. Pusg the add button (+) and type mqtt.
 The MQTT integration will showup and you can select and install it.
 Fill in the MQTT server parameters from your mqtt server. Save and exit.
 
-The preparation of Home assitant is done!
+The preparation of Home Assistant is done!
 
 ### Preparing Pimatic
 Install the Hass plugin. In the plugin you configure the ip address, port, username and password of the mqtt server.
 In the field "discovery_prefix" add the same name you used in the mqtt configuration of Hass or leave it empty to use the default ("hass")
 If you want you can enable the debug option and read in the logfile log message screen extra debug info.
-After succeful installion and configuration of the Hass plugin you can add a Hass device.
+After succesful installation and configuration of the Hass plugin you can add a Hass device.
 
 ### Configuring the HASS device
 
@@ -40,7 +40,7 @@ Aftr saving the device config, the connection to Home Assistant is established a
 
 The device type of a Pimatic device determines the Home assistant Device type that is created in Home Assistant device.
 
-Currently the following pimatic devices are supported.
+Currently the following Pimatic devices are supported.
 
 |Pimatic  |direction | Hass | States
 |------------|:--------:|----------|-------------------|
@@ -60,6 +60,6 @@ For example adding a pimatic presence sensor with id **presence-livingroom**. In
 When you remove a Pimatic device from the config, in Home Assistant the card will get yellow and show the message 'entity not available'. You need to remove the card if you want to get rid of this message. If you leave the card in the Gui the entity becomes active again when you add the same Pimatic device again to the config.
 
 ### Multiple Pimatic systems
-It is possible to connect  multiple pimatic systems to 1 Home Assistant. Per Pimatic system you configure the devices as described above. Is Home Assistant all the devices from the different Pimatic sysyem are available. When you use the same pimatic-id's for the same type of device in different Pimatic systems, Hass will add a '_\<number\>' to the name. In this situation you need to check which hass device belongs to which Pimatic systems. 
+It is possible to connect  multiple Pimatic systems to 1 Home Assistant. Per Pimatic system you configure the devices as described above. Is Home Assistant all the devices from the different Pimatic sysyem are available. When you use the same pimatic-id's for the same type of device in different Pimatic systems, Hass will add a '_\<number\>' to the name. In this situation you need to check which hass device belongs to which Pimatic system. 
 ---
 The plugin is Node v10 compatible and in development. You could backup Pimatic before you are using this plugin!
