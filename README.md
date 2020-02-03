@@ -33,7 +33,7 @@ In the field "discovery_prefix" add the same name you used in the mqtt configura
 If you want you can enable the debug option and read in the logfile log message screen extra debug info.
 After succesful installation and configuration of the Hass plugin you can add a Hass device.
 
-### Configuring the HASS device
+### Configuring the Hass device
 
 In the Hass device you can add Pimatic devices by there pimatic-id. No further configuration is needed.
 Aftr saving the device config, the connection to Home Assistant is established and per pimatic device that you added in the device config a compatible device is created in Home Assistant.
@@ -60,6 +60,6 @@ For example adding a pimatic presence sensor with id **presence-livingroom**. In
 When you remove a Pimatic device from the config, in Home Assistant the card will get yellow and show the message 'entity not available'. You need to remove the card if you want to get rid of this message. If you leave the card in the Gui the entity becomes active again when you add the same Pimatic device again to the config.
 
 ### Multiple Pimatic systems
-It is possible to connect  multiple Pimatic systems to 1 Home Assistant. Per Pimatic system you configure the devices as described above. Is Home Assistant all the devices from the different Pimatic sysyem are available. When you use the same pimatic-id's for the same type of device in different Pimatic systems, Hass will add a '_\<number\>' to the name. In this situation you need to check which hass device belongs to which Pimatic system. 
+It is possible to connect  multiple Pimatic systems to 1 Home Assistant. Per Pimatic system you configure the devices as described above. Is Home Assistant all the devices from the different Pimatic sysyem are available. When you use the same pimatic-id's for the same type of device in different Pimatic systems, Hass will add a '_\<number\>' to the name. In this situation you need to check which hass device belongs to which Pimatic system.
 ---
 The plugin is Node v10 compatible and in development. You could backup Pimatic before you are using this plugin!
