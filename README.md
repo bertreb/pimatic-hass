@@ -18,9 +18,9 @@ mqtt:
   discovery: true
   discovery_prefix: hass
 ```
-It's important to use a discovery_prefix, thats the same as the discovery_prefix you are using in the pimatic plugin. Otherwise the automatic installation of devices will not work.
+It's important to use in Hass the same discovery_prefix you are using in the pimatic plugin. Otherwise the automatic installation of devices will not work.
 
-Than you add the MQTT integration in Home Assistant.
+Now you can add the MQTT integration in Home Assistant.
 Goto to the settings menu and select integrations. Pusg the add button (+) and type mqtt.
 The MQTT integration will showup and you can select and install it.
 Fill in the MQTT server parameters from your mqtt server. Save and exit.
@@ -28,7 +28,7 @@ Fill in the MQTT server parameters from your mqtt server. Save and exit.
 The preparation of Home assitant is done!
 
 ### Preparing Pimatic
-Install the Hass plugin.In the plugin you configure the ip address, port, username and password of the mqtt server.
+Install the Hass plugin. In the plugin you configure the ip address, port, username and password of the mqtt server.
 In the field "discovery_prefix" add the same name you used in the mqtt configuration of Hass or leave it empty to use the default ("hass")
 If you want you can enable the debug option and read in the logfile log message screen extra debug info.
 After succeful installion and configuration of the Hass plugin you can add a Hass device.
@@ -36,7 +36,7 @@ After succeful installion and configuration of the Hass plugin you can add a Has
 ### Configuring the HASS device
 
 In the Hass device you can add Pimatic devices by there pimatic-id. No further configuration is needed.
-Aftr saving the device config, the connection to Home Assistant is established and per pimati device that you added in the device config a compatible device is created in Home Assistant.
+Aftr saving the device config, the connection to Home Assistant is established and per pimatic device that you added in the device config a compatible device is created in Home Assistant.
 
 The device type of a Pimatic device determines the Home assistant Device type that is created in Home Assistant device.
 
@@ -51,12 +51,15 @@ Currently the following pimatic devices are supported.
 |Temp/hum | 1-way   | Binary   | temperature, humidity
 
 ### Adding Pimatic devices in the Hass Gui
-In Home Assistant the automatic created Pimatic devices can be added via the 'configure UI' option.
+In Home Assistant the automatic created Pimatic devices can be added as a card via the 'configure UI' option.
 Via the add button (+) you can select a device type and search on device name.
 The Hass device name is \<hass device type\>.\<pimatic-id\> and can when searching to add a device, also be found under the friendly name \<pimatic-id\>
 
 For example adding a pimatic presence sensor with id **presence-livingroom**. In Home Assistant the device gets the following name **binary_sensor.presence-livingroom** or **presence-livingroom** (in the add device search).
 
+When you remove a Pimatic device from the config, in Home Assistant the card will get yellow and show the message 'entity not available'. You need to remove the card if you want to get rid of this message. If you leave the card in the Gui the entity becomes active again when you add the same Pimatic device again to the config.
 
+### Multiple Pimatic systems
+It is possible to connect  multiple pimatic systems to 1 Home Assistant. Per Pimatic system you configure the devices as described above. Is Home Assistant all the devices from the different Pimatic sysyem are available. When you use the same pimatic-id's for the same type of device in different Pimatic systems, Hass will add a '_\<number\>' to the name. In this situation you need to check which hass device belongs to which Pimatic systems. 
 ---
 The plugin is Node v10 compatible and in development. You could backup Pimatic before you are using this plugin!
