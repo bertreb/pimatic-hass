@@ -217,10 +217,7 @@ module.exports = (env) =>
         for _device,i in @config.devices
           env.logger.debug "InitDevices _device: " + _device
           device = @framework.deviceManager.getDeviceById(_device)
-          unless device?
-            env.logger.debug 'No devices in config'
-            reject()
-          else
+          if device?
             env.logger.debug "Found device: " + device.id
             do (device) =>
               nrOfDevices += 1
@@ -231,6 +228,8 @@ module.exports = (env) =>
                 env.logger.error "Error " + err
                 reject()
               )
+          else
+            env.logger.info "Device '#{_device}' not found, please remove from config!"
         resolve(nrOfDevices)
       )
 

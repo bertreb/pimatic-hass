@@ -11,3 +11,6 @@
 	* rePublish devices after Hass restart
 * 20210103, v.0.2.3
 	* fix on empty config
+* 20210103, v.0.2.4
+	* fix non existing device
+	* add source unit in variablesDevice

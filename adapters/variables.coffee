@@ -73,6 +73,7 @@ module.exports = (env) ->
       @id = device.id
       @device = device
       @variable = variable
+      @unit = @device.attributes[@variable.name].unit ? ""
       @client = client
       @pimaticId = discovery_prefix
       @discoveryId = discovery_prefix
@@ -99,6 +100,7 @@ module.exports = (env) ->
         _configVar = 
           name: @hassDeviceId
           state_topic: @discoveryId + '/sensor/' + @hassDeviceId + "/state"
+          unit_of_measurement: @unit
           value_template: "{{ value_json.variable}}"
         _topic = @discoveryId + '/sensor/' + @hassDeviceId + '/config'
         env.logger.debug "Publish discover _topic: " + _topic 
