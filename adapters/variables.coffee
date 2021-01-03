@@ -90,6 +90,26 @@ module.exports = (env) ->
       env.logger.debug "handlemessage sensor -> No action " + JSON.stringify(packet,null,2)
       return
 
+    getDeviceClass: ()=>
+      switch @unit
+        when "hPa" or "mbar"
+          @device_class = "pressure"
+        when "kWh" or "Wh" or "mWh"
+          @device_class = "energy"
+        when "W" or "kW" or "mW"
+          @device_class = "power"
+        when "lx" or "lm"
+          @device_class = "illuminance"
+        when "A" or "kA" or "mA"
+          @device_class = "current"
+        when "V" or "mV" or "kV"
+          @device_class = "voltage"
+        when "°C" or "°F"
+          @device_class = "temperature"
+        else
+          @device_class = "none"
+      return @device_class
+
     clearDiscovery: () =>
       _topic = @discoveryId + '/sensor/' + @hassDeviceId + '/config'
       env.logger.debug "Discovery cleared _topic: " + _topic 
@@ -101,6 +121,7 @@ module.exports = (env) ->
           name: @hassDeviceId
           state_topic: @discoveryId + '/sensor/' + @hassDeviceId + "/state"
           unit_of_measurement: @unit
+          device_class: @getDeviceClass()
           value_template: "{{ value_json.variable}}"
         _topic = @discoveryId + '/sensor/' + @hassDeviceId + '/config'
         env.logger.debug "Publish discover _topic: " + _topic 

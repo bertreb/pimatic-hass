@@ -14,3 +14,5 @@
 * 20210103, v.0.2.4
 	* fix non existing device
 	* add source unit in variablesDevice
+* 20210103, v.0.2.5
+	* added device classes for some variables types
