@@ -82,16 +82,17 @@ module.exports = (env) =>
         @client.on 'connect', () =>
           env.logger.debug "Successfully connected to MQTT server"
           @_initDevices()
-          .then(() =>
-            @_setPresence(true)
-            @client.subscribe @discovery_prefix + "/#" , (err, granted) =>
-              if err
-                env.logger.error "Error in initdevices " + err
-                return
-              env.logger.debug "Succesfully subscribed to #{@discovery_prefix}: " + JSON.stringify(granted,null,2)
-              for i, _adapter of @adapters
-                _adapter.publishDiscovery()
-                _adapter.publishState()
+          .then((nrOfDevices) =>
+            if nrOfDevices > 0
+              @_setPresence(true)
+              @client.subscribe @discovery_prefix + "/#" , (err, granted) =>
+                if err
+                  env.logger.error "Error in initdevices " + err
+                  return
+                env.logger.debug "Succesfully subscribed to #{@discovery_prefix}: " + JSON.stringify(granted,null,2)
+                for i, _adapter of @adapters
+                  _adapter.publishDiscovery()
+                  _adapter.publishState()
           ).catch((err)=>
             env.logger.error "Error initdevices: " + err
           )
@@ -212,22 +213,25 @@ module.exports = (env) =>
     _initDevices: () =>
       return new Promise((resolve,reject) =>
         @adapters = {}
+        nrOfDevices = 0
         for _device,i in @config.devices
           env.logger.debug "InitDevices _device: " + _device
           device = @framework.deviceManager.getDeviceById(_device)
-          env.logger.debug "Found device: " + device.id
           unless device?
             env.logger.debug 'No devices in config'
             reject()
-          do (device) =>
-            @_addDevice(device)
-            .then(()=>
-              env.logger.debug "Device '#{device.id}' added"
-              resolve()
-            ).catch((err)=>
-              env.logger.error "Error " + err
-              reject()
-            )
+          else
+            env.logger.debug "Found device: " + device.id
+            do (device) =>
+              nrOfDevices += 1
+              @_addDevice(device)
+              .then(()=>
+                env.logger.debug "Device '#{device.id}' added"
+              ).catch((err)=>
+                env.logger.error "Error " + err
+                reject()
+              )
+        resolve(nrOfDevices)
       )
 
     getAdapter: (topic) =>

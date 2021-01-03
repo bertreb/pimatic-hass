@@ -9,3 +9,5 @@
 	* edit package
 * 20210103, v.0.2.2
 	* rePublish devices after Hass restart
+* 20210103, v.0.2.3
+	* fix on empty config
