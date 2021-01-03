@@ -106,7 +106,15 @@ module.exports = (env) =>
           if _adapter?
             newState = _adapter.handleMessage(packet)
           if topic.startsWith(@discovery_prefix + "/status")
-            env.logger.debug "Hass status message received, status: " + JSON.stringify(packet,null,2)
+            if String packet.payload is "offline"
+              @_setPresence(false)
+            if String packet.payload is "online"
+              @_setPresence(true)
+              env.logger.debug "RePublish devices to Hass"
+              for i, _adapter of @adapters
+                _adapter.publishDiscovery()
+                _adapter.publishState()              
+            #env.logger.debug "Hass status message received, status: " + String packet.payload
 
         @client.on 'pingreq', () =>
           env.logger.debug "Ping request, no aswer YET"
