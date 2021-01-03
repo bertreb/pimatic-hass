@@ -5,3 +5,5 @@
 * 20210103, v.0.2.0
 	* add variablesDevice
 	* edit on syncing
+* 20210103, v.0.2.1
+	* edit package

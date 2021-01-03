@@ -105,6 +105,8 @@ module.exports = (env) =>
           env.logger.debug "message received with topic: " + topic
           if _adapter?
             newState = _adapter.handleMessage(packet)
+          if topic.startsWith(@discovery_prefix + "/status")
+            env.logger.debug "Hass status message received, status: " + JSON.stringify(packet,null,2)
 
         @client.on 'pingreq', () =>
           env.logger.debug "Ping request, no aswer YET"

@@ -14,7 +14,7 @@
     "home assistant",
     "mqtt"
   ],
-  "version": "0.2.0",
+  "version": "0.2.1",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/bertreb/pimatic-hass.git"
@@ -23,10 +23,7 @@
     "pimatic-hass.coffee",
     "hass-config-schema.coffee",
     "device-config-schema.coffee",
-    "adapters/light.coffee",
-    "adapters/switch.coffee",
-    "adapters/sensor.coffee",
-    "adapters/binarysensor.coffee",
+    "adapters",
     "README.md",
     "HISTORY.md",
     "LICENSE"
