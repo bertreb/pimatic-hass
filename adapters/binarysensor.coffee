@@ -90,6 +90,8 @@ module.exports = (env) ->
           @client.publish(_topic2, String _state)
         )
 
+    update: () ->
+      env.logger.debug "Update not implemented"
 
     destroy: ->
       @clearDiscovery()

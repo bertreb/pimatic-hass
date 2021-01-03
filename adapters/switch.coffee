@@ -63,6 +63,9 @@ module.exports = (env) ->
         @client.publish(_topic, String _state)
       )
 
+    update: () ->
+      env.logger.debug "Update not implemented"
+
     destroy: ->
       @clearDiscovery()
       @device.removeListener 'state', @stateHandler

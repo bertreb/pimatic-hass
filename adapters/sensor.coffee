@@ -110,6 +110,8 @@ module.exports = (env) ->
         env.logger.info "Error getting Temperature: " + err
       )
 
+    update: () ->
+      env.logger.debug "Update not implemented"
 
     destroy: ->
       @clearDiscovery()

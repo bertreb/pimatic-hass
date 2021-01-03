@@ -202,6 +202,8 @@ module.exports = (env) ->
         v
       ]
 
+    update: () ->
+      env.logger.debug "Update not implemented"
 
     destroy: ->
       @clearDiscovery()

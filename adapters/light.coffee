@@ -122,6 +122,9 @@ module.exports = (env) ->
     map = (value, low1, high1, low2, high2) ->
       Math.round(low2 + (high2 - low2) * (value - low1) / (high1 - low1))
 
+    update: () ->
+      env.logger.debug "Update not implemented"
+
     destroy: ->
       @clearDiscovery()
       @device.removeListener 'state', @stateHandler

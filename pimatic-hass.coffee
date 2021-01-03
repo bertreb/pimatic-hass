@@ -8,10 +8,12 @@ module.exports = (env) =>
   sensorAdapter = require('./adapters/sensor')(env)
   binarySensorAdapter = require('./adapters/binarysensor')(env)
   #shutterAdapter = require('./adapters/shutter')(env)
+  variablesAdapter = require('./adapters/variables')(env)
 
   class HassPlugin extends env.plugins.Plugin
 
     init: (app, @framework, @config) =>
+
       pluginConfigDef = require("./hass-config-schema.coffee")
       deviceConfigDef = require("./device-config-schema")
       @framework.deviceManager.registerDeviceClass('HassDevice', {
@@ -34,12 +36,16 @@ module.exports = (env) =>
         #for i, _adapter of @adapters
         #  _adapter.setAvailability(off)        
 
+      
+      ###
+      # not possible, HassDevice need for this to be the last device in config.
       for _d in @config.devices
         do(_d) =>
           _d = _d.trim()
           _dev = @framework.deviceManager.getDeviceById(_d)
           unless _dev?
-            throw new Error ("Pimatic device #{_d} does not exsist")
+            env.logger.debug "Pimatic device #{_d} does not exsist"
+      ###
 
       @discovery_prefix = @plugin.config.discovery_prefix ? @plugin.pluginConfigDef.discovery_prefix.default
 
@@ -68,13 +74,13 @@ module.exports = (env) =>
       ###
       @mqttOptions["protocolId"] = "MQTT" # @config?.mqttProtocol or @plugin.configProperties.mqttProtocol.default
 
-      @client = new mqtt.connect(@mqttOptions)
-      env.logger.debug "Connecting to MQTT server..."
+      @framework.variableManager.waitForInit()
+      .then ()=>
+        @client = new mqtt.connect(@mqttOptions)
+        env.logger.debug "Connecting to MQTT server..."
 
-      @client.on 'connect', () =>
-        env.logger.debug "Successfully connected to MQTT server"
-        @framework.variableManager.waitForInit()
-        .then(()=>
+        @client.on 'connect', () =>
+          env.logger.debug "Successfully connected to MQTT server"
           @_initDevices()
           .then(() =>
             @_setPresence(true)
@@ -89,34 +95,33 @@ module.exports = (env) =>
           ).catch((err)=>
             env.logger.error "Error initdevices: " + err
           )
-        )
 
-      @client.on 'message', (topic, message, packet) =>
-        #env.logger.debug "Packet received " + JSON.stringify(packet.payload,null,2)
-        if topic.endsWith("/config")
-          env.logger.debug "Config received no action: " + String(packet.payload)
-          return
-        _adapter = @getAdapter(topic)
-        env.logger.debug "message received with topic: " + topic
-        if _adapter?
-          newState = _adapter.handleMessage(packet)
+        @client.on 'message', (topic, message, packet) =>
+          #env.logger.debug "Packet received " + JSON.stringify(packet.payload,null,2)
+          if topic.endsWith("/config")
+            env.logger.debug "Config received no action: " + String(packet.payload)
+            return
+          _adapter = @getAdapter(topic)
+          env.logger.debug "message received with topic: " + topic
+          if _adapter?
+            newState = _adapter.handleMessage(packet)
 
-      @client.on 'pingreq', () =>
-        env.logger.debug "Ping request, no aswer YET"
-        # send a pingresp
-        #@client.pingresp()
+        @client.on 'pingreq', () =>
+          env.logger.debug "Ping request, no aswer YET"
+          # send a pingresp
+          #@client.pingresp()
 
-      # connection error handling
-      @client.on 'close', () => 
-        @_setPresence(false)
+        # connection error handling
+        @client.on 'close', () => 
+          @_setPresence(false)
 
-      @client.on 'error', (err) => 
-        env.logger.error "error: " + err
-        @_setPresence(false)
+        @client.on 'error', (err) => 
+          env.logger.error "error: " + err
+          @_setPresence(false)
 
-      @client.on 'disconnect', () => 
-        env.logger.info "Client disconnect"
-        @_setPresence(false)
+        @client.on 'disconnect', () => 
+          env.logger.info "Client disconnect"
+          @_setPresence(false)
 
 
       @framework.on 'deviceDeleted', (device) =>
@@ -125,14 +130,15 @@ module.exports = (env) =>
           _adapter.destroy()
           delete @adapters[i]
 
+      ###
       @framework.on 'deviceAdded', (device) =>
         @framework.variableManager.waitForInit()
         .then(() =>
-          env.logger.info "Device '#{device.id}' checked for autodiscovery"
+          env.logger.info "deviceAdded '#{device.id}' checked for autodiscovery"
           unless @adapters[device.id]?
             @_addDevice(device)
             .then((newAdapter) =>
-              env.logger.info "Device '#{newAdapter.id}' added"
+              env.logger.info "device '#{newAdapter.id}' added"
               newAdapter.publishDiscovery()
               .then(() =>
                 newAdapter.publishState()
@@ -142,6 +148,16 @@ module.exports = (env) =>
             )
         ).catch((err) =>
         )
+      ###
+
+      @framework.on 'deviceChanged', (device) =>
+        if device.id is @id
+          # the HassDevice is changed
+          env.logger.debug "HassDevice changed"
+        else
+          # one of the used device can be changed
+          if @adapters[device.id]?
+              @adapters[device.id].update(device)
 
       super()
 
@@ -169,6 +185,10 @@ module.exports = (env) =>
           _newAdapter = new binarySensorAdapter(device, @client, @discovery_prefix)
           @adapters[device.id] = _newAdapter
           resolve(_newAdapter)
+        else if device.config.class is "VariablesDevice"
+          _newAdapter = new variablesAdapter(device, @client, @discovery_prefix)
+          @adapters[device.id] = _newAdapter
+          resolve(_newAdapter)
         else if device instanceof env.devices.HeatingThermostat
           throw new Error "Device type HeatingThermostat not implemented"
         else if device instanceof env.devices.ShutterController
@@ -183,7 +203,9 @@ module.exports = (env) =>
       return new Promise((resolve,reject) =>
         @adapters = {}
         for _device,i in @config.devices
+          env.logger.debug "InitDevices _device: " + _device
           device = @framework.deviceManager.getDeviceById(_device)
+          env.logger.debug "Found device: " + device.id
           unless device?
             env.logger.debug 'No devices in config'
             reject()
