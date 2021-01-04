@@ -69,4 +69,5 @@ When you remove a Pimatic device from the config, in Home Assistant the card wil
 It is possible to connect multiple Pimatic systems to 1 Home Assistant. Per Pimatic system you install the plugin and configure devices as described above. Is Home Assistant all the devices from the different Pimatic sysyem are available. When you use the same pimatic-id's for the same type of device in different Pimatic systems, Hass will add a '\_\<number\>' to the name. In this situation you need to check which hass device belongs to which Pimatic system.
 
 ---
-The plugin is Node v10 compatible and in development. You could backup Pimatic before you are using this plugin!
+The minimum node requirement for this plugin is node v10!
+You could backup Pimatic before you are using this plugin!
