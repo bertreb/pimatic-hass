@@ -70,4 +70,5 @@ It is possible to connect multiple Pimatic systems to 1 Home Assistant. Per Pima
 
 ---
 The minimum node requirement for this plugin is node v10!
+
 You could backup Pimatic before you are using this plugin!
