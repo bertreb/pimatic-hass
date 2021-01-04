@@ -49,6 +49,9 @@ Currently the following Pimatic devices are supported.
 |Light    | 2-way   | Light    | Light on/off, brightness
 |Contact  | 1-way   | Binary   | opened/closed
 |Temp/hum | 1-way   | Binary   | temperature, humidity
+|Variables| 1-way	| Variable | variable value
+
+For usage of variables you need to put the variables in a Pimatic VariablesDevice.
 
 ### Adding Pimatic devices in the Hass Gui
 In Home Assistant the automatic created Pimatic devices can be added as a card via the 'configure UI' option.

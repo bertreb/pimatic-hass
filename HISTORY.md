@@ -16,3 +16,5 @@
 	* add source unit in variablesDevice
 * 20210103, v.0.2.6
 	* added device classes for some variables types
+* 20210104, v.0.2.10
+	* edit states syncs pimatic - hass

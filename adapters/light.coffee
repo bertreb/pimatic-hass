@@ -85,20 +85,23 @@ module.exports = (env) ->
       @client.publish(_topic, null)
 
     publishDiscovery: () =>
-      _config = 
-        name: @device.id
-        cmd_t: @discoveryId + '/' + @device.id + '/set'
-        stat_t: @discoveryId + '/' + @device.id + '/state'
-        schema: "json"
-        brightness: true
-        #brightness_state_topic: @discoveryId + '/' + @device.id + '/brightness'
-        #brightness_command_topic: @discoveryId + '/' + @device.id + '/brightness/set'
-      _topic = @discoveryId + '/light/' + @device.id + '/config'
-      env.logger.debug "Publish discover _topic: " + _topic 
-      env.logger.debug "Publish discover _config: " + JSON.stringify(_config)
-      @client.publish(_topic, JSON.stringify(_config), (err) =>
-        if err
-          env.logger.error "Error publishing Discovery " + err
+      return new Promise((resolve,reject) =>
+        _config = 
+          name: @device.id
+          cmd_t: @discoveryId + '/' + @device.id + '/set'
+          stat_t: @discoveryId + '/' + @device.id + '/state'
+          schema: "json"
+          brightness: true
+          #brightness_state_topic: @discoveryId + '/' + @device.id + '/brightness'
+          #brightness_command_topic: @discoveryId + '/' + @device.id + '/brightness/set'
+        _topic = @discoveryId + '/light/' + @device.id + '/config'
+        env.logger.debug "Publish discover _topic: " + _topic 
+        env.logger.debug "Publish discover _config: " + JSON.stringify(_config)
+        @client.publish(_topic, JSON.stringify(_config), (err) =>
+          if err
+            env.logger.error "Error publishing Discovery " + err
+        )
+        resolve(@id)
       )
 
     publishState: () =>

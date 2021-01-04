@@ -47,30 +47,33 @@ module.exports = (env) ->
         @client.publish(_topic2, null)
 
     publishDiscovery: () =>
-      if @hasContactSensor
-        _configC = 
-          name: @device.id
-          stat_t: @pimaticId + '/binary_sensor/' + @device.id + 'C/state'
-          device_class: "opening"
-        _topic = @discoveryId + '/binary_sensor/' + @device.id + 'C/config'
-        env.logger.debug "Publish discover _topic: " + _topic 
-        env.logger.debug "Publish discover _configContact: " + JSON.stringify(_configC)
-        @client.publish(_topic, JSON.stringify(_configC), (err) =>
-          if err
-            env.logger.error "Error publishing Discovery " + err
-        )
-      if @hasPresenceSensor
-        _configP = 
-          name: @device.id
-          stat_t: @pimaticId + '/binary_sensor/' + @device.id + 'P/state'
-          device_class: "motion"
-        _topic2 = @discoveryId + '/binary_sensor/' + @device.id + 'P/config'
-        env.logger.debug "Publish discover _topic: " + _topic2
-        env.logger.debug "Publish discover _configPresence: " + JSON.stringify(_configP)
-        @client.publish(_topic2, JSON.stringify(_configP), (err) =>
-          if err
-            env.logger.error "Error publishing Discovery " + err
-        )
+      return new Promise((resolve,reject) =>
+        if @hasContactSensor
+          _configC = 
+            name: @device.id
+            stat_t: @pimaticId + '/binary_sensor/' + @device.id + 'C/state'
+            device_class: "opening"
+          _topic = @discoveryId + '/binary_sensor/' + @device.id + 'C/config'
+          env.logger.debug "Publish discover _topic: " + _topic 
+          env.logger.debug "Publish discover _configContact: " + JSON.stringify(_configC)
+          @client.publish(_topic, JSON.stringify(_configC), (err) =>
+            if err
+              env.logger.error "Error publishing Discovery " + err
+          )
+        if @hasPresenceSensor
+          _configP = 
+            name: @device.id
+            stat_t: @pimaticId + '/binary_sensor/' + @device.id + 'P/state'
+            device_class: "motion"
+          _topic2 = @discoveryId + '/binary_sensor/' + @device.id + 'P/config'
+          env.logger.debug "Publish discover _topic: " + _topic2
+          env.logger.debug "Publish discover _configPresence: " + JSON.stringify(_configP)
+          @client.publish(_topic2, JSON.stringify(_configP), (err) =>
+            if err
+              env.logger.error "Error publishing Discovery " + err
+          )
+        resolve(@id)
+      )
 
     publishState: () =>
       if @hasContactSensor

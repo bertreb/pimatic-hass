@@ -42,16 +42,20 @@ module.exports = (env) ->
       @client.publish(_topic, null)
 
     publishDiscovery: () =>
-      _config = 
-        name: @device.id
-        cmd_t: @pimaticId + '/' + @device.id + '/set'
-        stat_t: @pimaticId + '/' + @device.id 
-      _topic = @discoveryId + '/switch/' + @device.id + '/config'
-      env.logger.debug "Publish discover _topic: " + _topic 
-      env.logger.debug "Publish discover _config: " + JSON.stringify(_config)
-      @client.publish(_topic, JSON.stringify(_config), (err) =>
-        if err
-          env.logger.error "Error publishing Discovery " + err
+      return new Promise((resolve,reject) =>
+        _config = 
+          name: @device.id
+          cmd_t: @pimaticId + '/' + @device.id + '/set'
+          stat_t: @pimaticId + '/' + @device.id
+        _topic = @discoveryId + '/switch/' + @device.id + '/config'
+        env.logger.debug "Publish discover _topic: " + _topic 
+        env.logger.debug "Publish discover _config: " + JSON.stringify(_config)
+        @client.publish(_topic, JSON.stringify(_config), (err) =>
+          if err
+            env.logger.error "Error publishing Discovery " + err
+            reject()
+          resolve(@id)
+        )
       )
 
     publishState: () =>

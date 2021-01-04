@@ -21,12 +21,17 @@ module.exports = (env) ->
 
     publishState: () =>
       for i, variable of @hassDevices
-        env.logger.debug "Publish state of " + variable.id
         variable.publishState()
 
     publishDiscovery: () =>
-      for i, variable of @hassDevices
-        variable.publishDiscovery()
+      return new Promise((resolve,reject) =>
+        publishDiscoveries = []
+        for i, variable of @hassDevices
+          publishDiscoveries.push variable.publishDiscovery()
+          Promise.all(publishDiscoveries)
+          resolve @id
+        )
+        
     
     clearDiscovery: () =>
       for i, variable of @hassDevices
@@ -54,9 +59,11 @@ module.exports = (env) ->
         env.logger.debug "Adding variable" + _variable.name
         _newVariableManager = new variableManager(@device, _variable, @client, @discovery_prefix)
         @hassDevices[_variable.name] = _newVariableManager
-        _newVariableManager.publishDiscovery()
-        .then(() =>
-          _newVariableManager.publishState()
+        @hassDevices[_variable.name].publishDiscovery()
+        .then((_i) =>
+          setTimeout( ()=>
+            @hassDevices[_i].publishState()
+          , 5000)
         ).catch((err) =>
         )
 
@@ -73,7 +80,7 @@ module.exports = (env) ->
       @id = device.id
       @device = device
       @variable = variable
-      @unit = @device.attributes[@variable.name].unit ? @attribute.name
+      @unit = @device.attributes[@variable.name]?.unit ? @variable.name
       @client = client
       @pimaticId = discovery_prefix
       @discoveryId = discovery_prefix
@@ -82,9 +89,10 @@ module.exports = (env) ->
       #env.logger.debug "_getVar: " + @_getVar
 
       @variableHandler = (val) =>
-        env.logger.debug "Variable change: " + val
+        env.logger.debug "Variable change: " + val + ", name: " + @variable.name
         @publishState()
       @device.on @variable.name, @variableHandler
+      env.logger.debug "Variable constructor " + @name
 
     handleMessage: (packet) =>
       env.logger.debug "handlemessage sensor -> No action " + JSON.stringify(packet,null,2)
@@ -107,22 +115,28 @@ module.exports = (env) ->
         when "°C" or "°F"
           @device_class = "temperature"
         else
-          @device_class = "none"
+          @device_class = null
       return @device_class
 
     clearDiscovery: () =>
       _topic = @discoveryId + '/sensor/' + @hassDeviceId + '/config'
       env.logger.debug "Discovery cleared _topic: " + _topic 
-      @client.publish(_topic, null)
+      @client.publish(_topic, null, (err) =>
+        if err
+          env.logger.error "Error publishing Discovery Variable  " + err
+      )
 
     publishDiscovery: () =>
       return new Promise((resolve,reject) =>
         _configVar = 
           name: @hassDeviceId
+          unique_id :@hassDeviceId
           state_topic: @discoveryId + '/sensor/' + @hassDeviceId + "/state"
           unit_of_measurement: @unit
-          device_class: @getDeviceClass()
           value_template: "{{ value_json.variable}}"
+        _deviceClass = @getDeviceClass()
+        if _deviceClass?
+          _configVar["device_class"] = _deviceClass
         _topic = @discoveryId + '/sensor/' + @hassDeviceId + '/config'
         env.logger.debug "Publish discover _topic: " + _topic 
         env.logger.debug "Publish discover _config: " + JSON.stringify(_configVar)
@@ -130,20 +144,27 @@ module.exports = (env) ->
           if err
             env.logger.error "Error publishing Discovery Variable  " + err
             reject()
-          resolve()
+          resolve(@variable.name)
         )
       )
 
     publishState: () =>
-      @device[@_getVar]()
-      .then (val)=>
-        _topic = @discoveryId + '/sensor/' + @hassDeviceId + "/state"
-        _payload =
-            variable: val
-        env.logger.debug "_stateTopic: " + _topic + ",  payload: " +  JSON.stringify(_payload)
-        @client.publish(_topic, JSON.stringify(_payload))
-      .catch (err) =>
-        env.logger.info "Error getting Humidity: " + err
+      return new Promise((resolve,reject) =>
+        @device[@_getVar]()
+        .then (val)=>
+          _topic = @discoveryId + '/sensor/' + @hassDeviceId + "/state"
+          _payload =
+              variable: val
+          env.logger.debug "_stateTopic: " + _topic + ",  payload: " +  JSON.stringify(_payload)
+          @client.publish(_topic, JSON.stringify(_payload), (err) =>
+            if err
+              env.logger.error "Error publishing state Variable  " + err
+              reject()
+            resolve()
+          )
+        .catch (err) =>
+          env.logger.info "Error getting Humidity: " + err
+      )
 
     destroy: ->
       @clearDiscovery()

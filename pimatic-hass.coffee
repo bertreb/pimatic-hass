@@ -91,36 +91,46 @@ module.exports = (env) =>
                   return
                 env.logger.debug "Succesfully subscribed to #{@discovery_prefix}: " + JSON.stringify(granted,null,2)
                 for i, _adapter of @adapters
-                  _adapter.publishDiscovery()
-                  _adapter.publishState()
+                  @adapters[i].publishDiscovery()
+                  .then (_i)=>
+                    setTimeout(()=>
+                      @adapters[_i].publishState()
+                    , 5000)
           ).catch((err)=>
             env.logger.error "Error initdevices: " + err
           )
 
         @client.on 'message', (topic, message, packet) =>
           #env.logger.debug "Packet received " + JSON.stringify(packet.payload,null,2)
-          if topic.endsWith("/config")
-            env.logger.debug "Config received no action: " + String(packet.payload)
-            return
+          #if topic.endsWith("/config")
+          #  env.logger.debug "Config received no action: " + String(packet.payload)
+          #  return
           _adapter = @getAdapter(topic)
-          env.logger.debug "message received with topic: " + topic
+          #env.logger.debug "message received with topic: " + topic
           if _adapter?
-            newState = _adapter.handleMessage(packet)
+            _adapter.handleMessage(packet)
           if topic.startsWith(@discovery_prefix + "/status")
-            if String packet.payload is "offline"
+            if (String packet.payload).indexOf("offline") >= 0
               @_setPresence(false)
-            if String packet.payload is "online"
+            if (String packet.payload).indexOf("online") >= 0 
               @_setPresence(true)
               env.logger.debug "RePublish devices to Hass"
-              for i, _adapter of @adapters
-                _adapter.publishDiscovery()
-                _adapter.publishState()              
+              @framework.variableManager.waitForInit()
+              .then ()=>
+                for i, _adpt of @adapters
+                  env.logger.debug "Republish publishDiscovery: " + _adpt.name
+                  @adapters[i].publishDiscovery()
+                  .then (_i)=>
+                    setTimeout(()=>
+                      env.logger.debug "Republish publishState: " + _adpt.name
+                      @adapters[_i].publishState()
+                    , 5000)
             #env.logger.debug "Hass status message received, status: " + String packet.payload
 
         @client.on 'pingreq', () =>
-          env.logger.debug "Ping request, no aswer YET"
+          env.logger.debug "Ping request, answering with pingresp"
           # send a pingresp
-          #@client.pingresp()
+          @client.pingresp()
 
         # connection error handling
         @client.on 'close', () => 
@@ -139,27 +149,8 @@ module.exports = (env) =>
       for i, _adapter of @adapters
         if _adapter.id is device.id
           _adapter.destroy()
-          delete @adapters[i]
-
-      ###
-      @framework.on 'deviceAdded', (device) =>
-        @framework.variableManager.waitForInit()
-        .then(() =>
-          env.logger.info "deviceAdded '#{device.id}' checked for autodiscovery"
-          unless @adapters[device.id]?
-            @_addDevice(device)
-            .then((newAdapter) =>
-              env.logger.info "device '#{newAdapter.id}' added"
-              newAdapter.publishDiscovery()
-              .then(() =>
-                newAdapter.publishState()
-              ).catch((err) =>
-              )
-            ).catch((err)=>
-            )
-        ).catch((err) =>
-        )
-      ###
+          .then ()=>
+            delete @adapters[i]
 
       @framework.on 'deviceChanged', (device) =>
         if device.id is @id
@@ -253,10 +244,12 @@ module.exports = (env) =>
     destroy: () =>
       for i, _adapter of @adapters
         _adapter.destroy()
+        #.then ()=>
         delete @adapters[i]
       try
         @client.end()
       catch err
+        env.logger.debug "Error ending mqtt client"
       super()
 
   return new HassPlugin
