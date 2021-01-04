@@ -56,7 +56,9 @@ module.exports = (env) ->
           _topic = @discoveryId + '/binary_sensor/' + @device.id + 'C/config'
           env.logger.debug "Publish discover _topic: " + _topic 
           env.logger.debug "Publish discover _configContact: " + JSON.stringify(_configC)
-          @client.publish(_topic, JSON.stringify(_configC), (err) =>
+          _options =
+            qos : 1
+          @client.publish(_topic, JSON.stringify(_configC), _options, (err) =>
             if err
               env.logger.error "Error publishing Discovery " + err
           )
@@ -68,7 +70,9 @@ module.exports = (env) ->
           _topic2 = @discoveryId + '/binary_sensor/' + @device.id + 'P/config'
           env.logger.debug "Publish discover _topic: " + _topic2
           env.logger.debug "Publish discover _configPresence: " + JSON.stringify(_configP)
-          @client.publish(_topic2, JSON.stringify(_configP), (err) =>
+          _options =
+            qos : 1
+          @client.publish(_topic2, JSON.stringify(_configP), _options, (err) =>
             if err
               env.logger.error "Error publishing Discovery " + err
           )
@@ -82,7 +86,9 @@ module.exports = (env) ->
           if contact then _state = "ON" else _state = "OFF"
           _topic = @pimaticId + '/binary_sensor/' + @device.id + 'C/state'
           env.logger.debug "Publish contact: " + _topic + ", _state: " + _state
-          @client.publish(_topic, String _state)
+          _options =
+            qos : 1
+          @client.publish(_topic, String _state, _options)
         )
       if @hasPresenceSensor
         @device.getPresence()
@@ -90,7 +96,9 @@ module.exports = (env) ->
           if presence then _state = "ON" else _state = "OFF"
           _topic2 = @pimaticId + '/binary_sensor/' + @device.id + 'P/state'
           env.logger.debug "Publish presence: " + _topic2 + ", _state: " + _state
-          @client.publish(_topic2, String _state)
+          _options =
+            qos : 1
+          @client.publish(_topic2, String _state, _options)
         )
 
     update: () ->

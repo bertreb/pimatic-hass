@@ -74,8 +74,7 @@ module.exports = (env) ->
 
   class variableManager extends events.EventEmitter
 
-    constructor: (device, variable, client, discovery_prefix) ->
-  
+    constructor: (device, variable, client, discovery_prefix) ->  
       @name = device.name
       @id = device.id
       @device = device
@@ -88,11 +87,13 @@ module.exports = (env) ->
       @_getVar = "get" + (@variable.name).charAt(0).toUpperCase() + (@variable.name).slice(1)
       #env.logger.debug "_getVar: " + @_getVar
 
-      @variableHandler = (val) =>
-        env.logger.debug "Variable change: " + val + ", name: " + @variable.name
+      @_variableName = @variable.name
+      @_handlerName = @variable.name + "Handler"
+      @[@_handlerName] = (val) =>
+        env.logger.debug "Variable '#{@variable.name}' change: " + val
         @publishState()
-      @device.on @variable.name, @variableHandler
-      env.logger.debug "Variable constructor " + @name
+      @device.on @_variableName, @[@_handlerName]
+      env.logger.debug "Variable constructor " + @name + ", handlerName: " + @_handlerName
 
     handleMessage: (packet) =>
       env.logger.debug "handlemessage sensor -> No action " + JSON.stringify(packet,null,2)
@@ -129,7 +130,8 @@ module.exports = (env) ->
     publishDiscovery: () =>
       return new Promise((resolve,reject) =>
         _configVar = 
-          name: @hassDeviceId
+          #name: @hassDeviceId
+          name: @name + "." + @variable.name
           unique_id :@hassDeviceId
           state_topic: @discoveryId + '/sensor/' + @hassDeviceId + "/state"
           unit_of_measurement: @unit
@@ -140,7 +142,9 @@ module.exports = (env) ->
         _topic = @discoveryId + '/sensor/' + @hassDeviceId + '/config'
         env.logger.debug "Publish discover _topic: " + _topic 
         env.logger.debug "Publish discover _config: " + JSON.stringify(_configVar)
-        @client.publish(_topic, JSON.stringify(_configVar), (err) =>
+        _options =
+          qos : 1
+        @client.publish(_topic, JSON.stringify(_configVar), _options,  (err) =>
           if err
             env.logger.error "Error publishing Discovery Variable  " + err
             reject()
@@ -154,20 +158,20 @@ module.exports = (env) ->
         .then (val)=>
           _topic = @discoveryId + '/sensor/' + @hassDeviceId + "/state"
           _payload =
-              variable: val
+            variable: val
           env.logger.debug "_stateTopic: " + _topic + ",  payload: " +  JSON.stringify(_payload)
-          @client.publish(_topic, JSON.stringify(_payload), (err) =>
+          _options =
+            qos : 1
+          @client.publish(_topic, JSON.stringify(_payload), _options, (err) =>
             if err
               env.logger.error "Error publishing state Variable  " + err
               reject()
             resolve()
           )
-        .catch (err) =>
-          env.logger.info "Error getting Humidity: " + err
       )
 
     destroy: ->
+      @device.removeListener @_variableName, @[@_handlerName]
       @clearDiscovery()
-      @device.removeListener @variable.name, @variableHandler
 
   module.exports = VariablesAdapter

@@ -97,7 +97,9 @@ module.exports = (env) ->
         _topic = @discoveryId + '/light/' + @device.id + '/config'
         env.logger.debug "Publish discover _topic: " + _topic 
         env.logger.debug "Publish discover _config: " + JSON.stringify(_config)
-        @client.publish(_topic, JSON.stringify(_config), (err) =>
+        _options =
+          qos : 1
+        @client.publish(_topic, JSON.stringify(_config), _options, (err) =>
           if err
             env.logger.error "Error publishing Discovery " + err
         )
@@ -118,7 +120,9 @@ module.exports = (env) ->
             state: _state
             brightness: _dimlevel
           env.logger.debug "Publish light payload: " + JSON.stringify(_payload)
-          @client.publish(_topic, JSON.stringify(_payload))
+          _options =
+            qos : 1
+          @client.publish(_topic, JSON.stringify(_payload), _options)
         )
       )
 

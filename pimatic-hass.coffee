@@ -159,7 +159,8 @@ module.exports = (env) =>
         else
           # one of the used device can be changed
           if @adapters[device.id]?
-              @adapters[device.id].update(device)
+            env.logger.debug "One of the HassDevice changed"
+            @adapters[device.id].update(device)
 
       super()
 
@@ -243,7 +244,7 @@ module.exports = (env) =>
 
     destroy: () =>
       for i, _adapter of @adapters
-        _adapter.destroy()
+        @adapters[i].destroy()
         #.then ()=>
         delete @adapters[i]
       try

@@ -18,3 +18,6 @@
 	* added device classes for some variables types
 * 20210104, v.0.2.10
 	* edit states syncs pimatic - hass
+* 20210104, v.0.2.11
+	* edit mqtt settings
+	* edit device name in Hass gui

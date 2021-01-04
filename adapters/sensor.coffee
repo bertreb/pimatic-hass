@@ -68,7 +68,9 @@ module.exports = (env) ->
         _topic = @discoveryId + '/sensor/' + @device.id + 'T/config'
         env.logger.debug "Publish discover _topic: " + _topic 
         env.logger.debug "Publish discover _config: " + JSON.stringify(_configTemp)
-        @client.publish(_topic, JSON.stringify(_configTemp), (err) =>
+        _options =
+          qos : 1
+        @client.publish(_topic, JSON.stringify(_configTemp), _options, (err) =>
           if err
             env.logger.error "Error publishing Discovery Temperature  " + err
             reject()
@@ -82,7 +84,9 @@ module.exports = (env) ->
         _topic2 = @discoveryId + '/sensor/' + @device.id + 'H/config'
         env.logger.debug "Publish discover _topic2: " + _topic2 
         env.logger.debug "Publish discover _config2: " + JSON.stringify(_configHum)
-        @client.publish(_topic2, JSON.stringify(_configHum), (err) =>
+        _options =
+          qos : 1
+        @client.publish(_topic2, JSON.stringify(_configHum), _options, (err) =>
           if err
             env.logger.error "Error publishing Discovery Humidity " + err
             reject()
@@ -102,7 +106,9 @@ module.exports = (env) ->
             temperature: @_temperature
             humidity: @_humidity
           env.logger.debug "_stateTopic: " + _topic + ",  payload: " +  JSON.stringify(_payload)
-          @client.publish(_topic, JSON.stringify(_payload))
+          _options =
+            qos : 1
+          @client.publish(_topic, JSON.stringify(_payload), _options)
         ).catch((err) =>
           env.logger.info "Error getting Humidity: " + err
         )

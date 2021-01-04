@@ -50,7 +50,9 @@ module.exports = (env) ->
         _topic = @discoveryId + '/switch/' + @device.id + '/config'
         env.logger.debug "Publish discover _topic: " + _topic 
         env.logger.debug "Publish discover _config: " + JSON.stringify(_config)
-        @client.publish(_topic, JSON.stringify(_config), (err) =>
+        _options =
+          qos : 1
+        @client.publish(_topic, JSON.stringify(_config), _options, (err) =>
           if err
             env.logger.error "Error publishing Discovery " + err
             reject()
@@ -63,8 +65,10 @@ module.exports = (env) ->
       .then((state)=>
         if state then _state = "ON" else _state = "OFF"
         _topic = @pimaticId + '/' + @device.id 
+        _options =
+          qos : 1
         env.logger.debug "Publish state: " + _topic + ", _state: " + _state
-        @client.publish(_topic, String _state)
+        @client.publish(_topic, String _state, _options)
       )
 
     update: () ->

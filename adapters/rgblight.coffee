@@ -133,7 +133,9 @@ module.exports = (env) ->
         _topic = @discoveryId + '/light/' + @device.id + '/config'
         env.logger.debug "Publish discover _topic: " + _topic 
         env.logger.debug "Publish discover _config: " + JSON.stringify(_config)
-        @client.publish(_topic, JSON.stringify(_config), (err) =>
+        _options =
+          qos : 1
+        @client.publish(_topic, JSON.stringify(_config), _options, (err) =>
           if err
             env.logger.error "Error publishing Discovery " + err
         )
@@ -160,7 +162,9 @@ module.exports = (env) ->
                 g: _rgb[1]
                 b: _rgb[2]
             env.logger.debug "Publish colorlight payload: " + JSON.stringify(_payload)
-            @client.publish(_topic, JSON.stringify(_payload))
+            _options =
+              qos : 1
+            @client.publish(_topic, JSON.stringify(_payload), _options)
           ).catch((err)=>
             env.logger.error "error getHue " + err
           )
