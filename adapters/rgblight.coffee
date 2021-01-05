@@ -109,9 +109,13 @@ module.exports = (env) ->
       return
 
     clearDiscovery: () =>
-      _topic = @discoveryId + '/' + @device.id + '/config'
-      env.logger.debug "Discovery cleared _topic: " + _topic 
-      @client.publish(_topic, null)
+      return new Promise((resolve,reject) =>
+        _topic = @discoveryId + '/' + @device.id + '/config'
+        env.logger.debug "Discovery cleared _topic: " + _topic 
+        @client.publish(_topic, null, ()=>
+          resolve()
+        )
+      )
 
     publishDiscovery: () =>
       return new Promise((resolve,reject) =>
@@ -212,8 +216,12 @@ module.exports = (env) ->
     update: () ->
       env.logger.debug "Update not implemented"
 
-    destroy: ->
+    clearAndDestroy: ->
       @clearDiscovery()
+      .then () =>
+        @destroy()
+
+    destroy: ->
       @device.removeListener 'state', @stateHandler
       @device.removeListener 'dimlevel', @dimlevelHandler
       @device.removeListener 'hue', @hueHandler

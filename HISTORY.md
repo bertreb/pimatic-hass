@@ -25,3 +25,5 @@
 	* change variables device to string payload
 * 20210105, v.0.2.13
 	* fix variables destroy function
+* 20210105, v.0.2.14
+	* edit adding and removing Hass devices

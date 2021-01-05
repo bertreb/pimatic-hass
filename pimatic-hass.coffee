@@ -36,16 +36,12 @@ module.exports = (env) =>
         #for i, _adapter of @adapters
         #  _adapter.setAvailability(off)        
 
-      
-      ###
       # not possible, HassDevice need for this to be the last device in config.
       for _d in @config.devices
         do(_d) =>
-          _d = _d.trim()
-          _dev = @framework.deviceManager.getDeviceById(_d)
-          unless _dev?
-            env.logger.debug "Pimatic device #{_d} does not exsist"
-      ###
+          if _d.indexOf(" ") >= 0
+            env.logger.info "No spaced allowed in device id"
+            throw new Error "No spaced allowed in device id" 
 
       @discovery_prefix = @plugin.config.discovery_prefix ? @plugin.pluginConfigDef.discovery_prefix.default
 
@@ -145,22 +141,38 @@ module.exports = (env) =>
           @_setPresence(false)
 
 
-      @framework.on 'deviceDeleted', (device) =>
+      @framework.on 'deviceRemoved', @deviceRemovedListener = (device) =>
       for i, _adapter of @adapters
-        if _adapter.id is device.id
-          _adapter.destroy()
+        env.logger.debug "@adapters[i].id: " + @adapters[i].id + ", device.id: " + device.id
+        if @adapters[i].id is device.id
+          @adapters[i].clearAndDestroy()
           .then ()=>
             delete @adapters[i]
 
-      @framework.on 'deviceChanged', (device) =>
-        if device.id is @id
+      @framework.on 'deviceChanged', @deviceChangedListener = (device) =>
+        env.logger.debug "Device changed: " + device.config.id
+        if device.config.id is @id
           # the HassDevice is changed
           env.logger.debug "HassDevice changed"
+          ###
+          #check if one of the used Hass is removed
+          removeHassDevices = []
+          env.logger.debug "device.config.devices: " + JSON.stringify(device.config.devices,null,2)
+          for _device in @config.devices
+            env.logger.debug "@config.devices.device: " + _device
+            if !(_device in device.config.devices)
+              env.logger.debug "added device '#{_device}' for removal"
+              removeHassDevices.push _device
+          for _removeDevice in removeHassDevices
+            #remove 'device' from hass
+            env.logger.debug "Remove device '#{_removeDevice}' from Hass"
+            @adapters[_removeDevice].clearAndDestroy()
+          ###
         else
           # one of the used device can be changed
-          if @adapters[device.id]?
-            env.logger.debug "One of the HassDevice changed"
-            @adapters[device.id].update(device)
+          if @adapters[device.config.id]?
+            env.logger.debug "One of the HassDevice changed: " + device.config.id
+            @adapters[device.config.id].update(device)
 
       super()
 
@@ -243,14 +255,20 @@ module.exports = (env) =>
         return null
 
     destroy: () =>
+      try
+        @framework.removeListener "deviceChanged", @deviceChangedListener
+        @framework.removeListener "deviceRemoved", @deviceRemovedListener
+      catch e
+        env.logger.debug "HassDevice #{@id}, Error removing listeners"
+      
       for i, _adapter of @adapters
-        @adapters[i].destroy()
+        @adapters[i].clearAndDestroy()
         #.then ()=>
         delete @adapters[i]
       try
         @client.end()
       catch err
-        env.logger.debug "Error ending mqtt client"
+        env.logger.debug "HassDevice #{@id}, Error ending mqtt client"
       super()
 
   return new HassPlugin

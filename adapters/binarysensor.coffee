@@ -37,14 +37,17 @@ module.exports = (env) ->
       env.logger.debug "Action binary_sensor no action needed"
 
     clearDiscovery: () =>
-      if @hasContactSensor
-        _topic = @discoveryId + '/binary_sensor/' + @device.id + 'C/config'
-        env.logger.debug "Discovery cleared _topic: " + _topic 
-        @client.publish(_topic, null)
-      if @hasPresenceSensor
-        _topic2 = @discoveryId + '/binary_sensor/' + @device.id + 'P/config'
-        env.logger.debug "Discovery cleared _topic: " + _topic2 
-        @client.publish(_topic2, null)
+      return new Promise((resolve,reject) =>
+        if @hasContactSensor
+          _topic = @discoveryId + '/binary_sensor/' + @device.id + 'C/config'
+          env.logger.debug "Discovery cleared _topic: " + _topic 
+          @client.publish(_topic, null)
+        if @hasPresenceSensor
+          _topic2 = @discoveryId + '/binary_sensor/' + @device.id + 'P/config'
+          env.logger.debug "Discovery cleared _topic: " + _topic2 
+          @client.publish(_topic2, null)
+        resolve()
+      )
 
     publishDiscovery: () =>
       return new Promise((resolve,reject) =>
@@ -104,8 +107,12 @@ module.exports = (env) ->
     update: () ->
       env.logger.debug "Update not implemented"
 
-    destroy: ->
+    clearAndDestroy: ->
       @clearDiscovery()
+      .then () =>
+        @destroy()
+
+    destroy: ->
       if @hasContactSensor
         @device.removeListener 'contact', @contactHandler
       if @hasPresenceSensor

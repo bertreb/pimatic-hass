@@ -32,10 +32,15 @@ module.exports = (env) ->
           resolve @id
         )
         
+    clearAndDestroy: () =>
+      for i, variable of @hassDevices
+        @hassDevices[i].clearDiscovery()
+        .then ()=>
+          @hassDevices[i].destroy()
     
     clearDiscovery: () =>
       for i, variable of @hassDevices
-        variable.clearDiscovery()
+        @hassDevices[i].clearDiscovery()
 
     handleMessage: (packet) =>
       for i, variable of @hassDevices
@@ -44,21 +49,22 @@ module.exports = (env) ->
     update: (deviceNew) =>
       addHassDevices = []
       removeHassDevices = []
-      for _variable in deviceNew.config.variables
-        if !_.find(@hassDevices, (hassD) => hassD.variable.name == _variable.name )
-          addHassDevices.push _variable
-      for i, _hassdevice of @hassDevices
-        if !_.find(deviceNew.config.variables, (v) => v.name == _hassdevice.variable.name)
-          removeHassDevices.push _hassdevice
 
-      for _hassDevice in removeHassDevices
-        env.logger.debug "Removing variable " + _hassdevice.variable.name
-        _hassDevice.destroy()
-        delete @hassDevices[i]
+      for _variable,i in deviceNew.config.variables
+        if !_.find(@hassDevices, (hassD) => hassD.variable.name == _variable.name )
+          addHassDevices.push deviceNew.config.variables[i]
+      removeHassDevices = _.differenceWith(@device.config.variables,deviceNew.config.variables, _.isEqual)
+      for removeDevice in removeHassDevices
+        env.logger.debug "Removing variable " + removeDevice.name
+        @hassDevices[removeDevice.name].clearDiscovery()
+        .then ()=>
+          @hassDevices[removeDevice.name].destroy()
+          delete @hassDevices[removeDevice.name]
+
+      @device = deviceNew
       for _variable in addHassDevices
         env.logger.debug "Adding variable" + _variable.name
-        _newVariableManager = new variableManager(@device, _variable, @client, @discovery_prefix)
-        @hassDevices[_variable.name] = _newVariableManager
+        @hassDevices[_variable.name] = new variableManager(deviceNew, _variable, @client, @discovery_prefix)
         @hassDevices[_variable.name].publishDiscovery()
         .then((_i) =>
           setTimeout( ()=>
@@ -69,7 +75,7 @@ module.exports = (env) ->
 
     destroy: ->
       for i,variable of @hassDevices
-        variable.destroy()
+        @hassDevices[i].destroy()
 
 
   class variableManager extends events.EventEmitter
@@ -79,7 +85,7 @@ module.exports = (env) ->
       @id = device.id
       @device = device
       @variable = variable
-      @unit = @device.attributes[@variable.name]?.unit ? @variable.name
+      @unit = @device.attributes[@variable.name]?.unit ? ""
       @client = client
       @pimaticId = discovery_prefix
       @discoveryId = discovery_prefix
@@ -120,11 +126,15 @@ module.exports = (env) ->
       return @device_class
 
     clearDiscovery: () =>
-      _topic = @discoveryId + '/sensor/' + @hassDeviceId + '/config'
-      env.logger.debug "Discovery cleared _topic: " + _topic 
-      @client.publish(_topic, null, (err) =>
-        if err
-          env.logger.error "Error publishing Discovery Variable  " + err
+      return new Promise((resolve,reject) =>
+        _topic = @discoveryId + '/sensor/' + @hassDeviceId + '/config'
+        env.logger.debug "Discovery cleared _topic: " + _topic 
+        @client.publish(_topic, null, (err) =>
+          if err
+            env.logger.error "Error publishing Discovery Variable  " + err
+            reject()
+          resolve()
+        )
       )
 
     publishDiscovery: () =>
@@ -154,24 +164,29 @@ module.exports = (env) ->
 
     publishState: () =>
       return new Promise((resolve,reject) =>
-        @device[@_getVar]()
-        .then (val)=>
-          _topic = @discoveryId + '/sensor/' + @hassDeviceId + "/state"
-          _payload =
-            variable: String val
-          env.logger.debug "_stateTopic: " + _topic + ",  payload: " +  JSON.stringify(_payload)
-          _options =
-            qos : 1
-          @client.publish(_topic, JSON.stringify(_payload), _options, (err) =>
-            if err
-              env.logger.error "Error publishing state Variable  " + err
-              reject()
-            resolve()
-          )
+        try
+          @device[@_getVar]()
+          .then (val)=>
+            _topic = @discoveryId + '/sensor/' + @hassDeviceId + "/state"
+            _payload =
+              variable: String val
+            env.logger.debug "_stateTopic: " + _topic + ",  payload: " +  JSON.stringify(_payload)
+            _options =
+              qos : 1
+            @client.publish(_topic, JSON.stringify(_payload), _options, (err) =>
+              if err
+                env.logger.error "Error publishing state Variable  " + err
+                reject()
+              resolve()
+            )
+          .catch (err)=>
+            env.logger.debug "handled error getting variable " + @_getVar + ", err: " + JSON.stringify(err,null,2)
+        catch err
+          env.logger.debug "handled error in @_getVar: " + @_getVar + ", err: " + JSON.stringify(err,null,2) 
       )
 
     destroy: ->
       @device.removeListener @_variableName, @[@_handlerName]
-      @clearDiscovery()
+      #@clearDiscovery()
 
   module.exports = VariablesAdapter
