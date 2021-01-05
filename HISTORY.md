@@ -23,3 +23,5 @@
 	* edit device name in Hass gui
 * 20210105, v.0.2.12
 	* change variables device to string payload
+* 20210105, v.0.2.13
+	* fix variables destroy function

@@ -68,7 +68,7 @@ module.exports = (env) ->
         )
 
     destroy: ->
-      for variable in @hassDevices
+      for i,variable of @hassDevices
         variable.destroy()
 
 
