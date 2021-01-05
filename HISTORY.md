@@ -21,3 +21,5 @@
 * 20210104, v.0.2.11
 	* edit mqtt settings
 	* edit device name in Hass gui
+* 20210105, v.0.2.12
+	* change variables device to string payload

@@ -158,7 +158,7 @@ module.exports = (env) ->
         .then (val)=>
           _topic = @discoveryId + '/sensor/' + @hassDeviceId + "/state"
           _payload =
-            variable: val
+            variable: String val
           env.logger.debug "_stateTopic: " + _topic + ",  payload: " +  JSON.stringify(_payload)
           _options =
             qos : 1
