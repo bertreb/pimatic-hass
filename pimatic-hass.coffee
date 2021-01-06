@@ -3,12 +3,14 @@ module.exports = (env) =>
   mqtt = require('mqtt')
   _ = require("lodash")
   switchAdapter = require('./adapters/switch')(env)
+  buttonsAdapter = require('./adapters/buttons')(env)
   lightAdapter = require('./adapters/light')(env)
   #rgblightAdapter = require('./adapters/rgblight')(env)
   sensorAdapter = require('./adapters/sensor')(env)
   binarySensorAdapter = require('./adapters/binarysensor')(env)
   #shutterAdapter = require('./adapters/shutter')(env)
   variablesAdapter = require('./adapters/variables')(env)
+  heatingThermostatAdapter = require('./adapters/thermostat')(env)
 
   class HassPlugin extends env.plugins.Plugin
 
@@ -204,8 +206,11 @@ module.exports = (env) =>
           _newAdapter = new variablesAdapter(device, @client, @discovery_prefix)
           @adapters[device.id] = _newAdapter
           resolve(_newAdapter)
-        else if device instanceof env.devices.HeatingThermostat
-          throw new Error "Device type HeatingThermostat not implemented"
+        else if device instanceof env.devices.HeatingThermostat or (device.config.class).indexOf("Thermostat") >= 0
+          _newAdapter = new heatingThermostatAdapter(device, @client, @discovery_prefix)
+          @adapters[device.id] = _newAdapter
+          resolve(_newAdapter)
+          #throw new Error "Device type HeatingThermostat not implemented"
         else if device instanceof env.devices.ShutterController
           throw new Error "Device type ShutterController not implemented"
         else

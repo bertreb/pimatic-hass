@@ -27,3 +27,5 @@
 	* fix variables destroy function
 * 20210105, v.0.2.14
 	* edit adding and removing Hass devices
+* 20210106, v.0.2.15
+	* removed info on gettingDevices
