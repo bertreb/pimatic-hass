@@ -7,7 +7,7 @@ The communication between Pimatic and Hass is done via mqtt. You need to use a m
 
 ### Preparing Home Assistant
 The whole setup of Home Assistant is out of scope of this plugin. So the starting point is a working Hass system with configurator installed/enabled.
-In the configurator you open the file "configurations.yaml" and add the following lines.
+In the configurator you open the file "configuration.yaml" and add the following lines.
 
 ```
 mqtt:
@@ -17,6 +17,12 @@ mqtt:
   port: <broker port>
   discovery: true
   discovery_prefix: hass
+  birth_message:
+    topic: 'hass/status'
+    payload: 'online'
+  will_message:
+    topic: 'hass/status'
+    payload: 'offline'
 ```
 It's important to use in Hass the same discovery_prefix you are using in the Pimatic plugin. Otherwise the automatic installation of devices will not work.
 
