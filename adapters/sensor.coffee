@@ -130,5 +130,8 @@ module.exports = (env) ->
         @destroy()
 
     destroy: ->
-      @device.removeListener 'temperature', @temperatureHandler
-      @device.removeListener 'humidity', @humidityHandler
+      return new Promise((resolve,reject) =>
+        @device.removeListener 'temperature', @temperatureHandler
+        @device.removeListener 'humidity', @humidityHandler
+        resolve()
+      )

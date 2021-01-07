@@ -104,10 +104,10 @@ module.exports = (env) =>
           #  env.logger.debug "Config received no action: " + String(packet.payload)
           #  return
           _adapter = @getAdapter(topic)
-          #env.logger.debug "message received with topic: " + topic
+          #env.logger.debug("message received with topic: " + (topic) + ", for adapter: " + _adapter.id) if _adapter?
           if _adapter?
             _adapter.handleMessage(packet)
-          if topic.startsWith(@discovery_prefix + "/status")
+          else if topic.startsWith(@discovery_prefix + "/status")
             if (String packet.payload).indexOf("offline") >= 0
               @_setPresence(false)
             if (String packet.payload).indexOf("online") >= 0 
@@ -173,8 +173,20 @@ module.exports = (env) =>
         else
           # one of the used device can be changed
           if @adapters[device.config.id]?
-            env.logger.debug "One of the HassDevice changed: " + device.config.id
-            @adapters[device.config.id].update(device)
+            _device = device
+            env.logger.debug "One of the HassDevice changed: " + _device.config.id
+            @adapters[_device.config.id].destroy()
+            .then ()=>
+              delete @adapters[_device.config.id]
+              env.logger.debug "Adapter deleted for #{_device.id}"
+              return @_addDevice(_device)
+            .then ()=>
+              env.logger.debug "New Adapter added for #{_device.config.id}"
+              setTimeout(()=>
+                env.logger.debug "Republish publishState: " + _device.config.id
+                @adapters[_device.config.id].publishState()
+              , 5000)
+
 
       super()
 
@@ -192,6 +204,10 @@ module.exports = (env) =>
           resolve(_newAdapter)
         else if device instanceof env.devices.SwitchActuator
           _newAdapter = new switchAdapter(device, @client, @discovery_prefix)
+          @adapters[device.id] = _newAdapter
+          resolve(_newAdapter)
+        else if device.config.class is "ButtonsDevice"
+          _newAdapter = new buttonsAdapter(device, @client, @discovery_prefix)
           @adapters[device.id] = _newAdapter
           resolve(_newAdapter)
         else if device instanceof env.devices.Sensor and device.hasAttribute("temperature") and device.hasAttribute("humidity")
@@ -216,7 +232,7 @@ module.exports = (env) =>
         else
           throw new Error "Init: Device type of device #{device.id} does not exist"
         #env.logger.info "Devices: " + JSON.stringify(@adapters,null,2)
-        reject()
+        resolve()
       )
 
     _initDevices: () =>
@@ -248,14 +264,12 @@ module.exports = (env) =>
         if _items[0] isnt @discovery_prefix
           env.logger.debug "#{@discovery_prefix} not found " + _items[0]
           return null
-        if _items[1]?
-          _adapter = @adapters[_items[1]]
-          if !_adapter?
-            env.logger.debug "Device '#{__items[1]}'' not found"
-          else
-            return @adapters[_items[1]]
-        else
-          return null
+        for i, _adapter of @adapters
+          #env.logger.debug "_adapter.id: " + _adapter.id + ", topic: " + topic
+          if (topic).indexOf(_adapter.id) >= 0
+            return @adapters[i]
+        env.logger.debug "Adapter for topic #{topic} not found"
+        return null
       catch err
         return null
 

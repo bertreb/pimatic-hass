@@ -44,7 +44,7 @@ module.exports = (env) ->
 
     handleMessage: (packet) =>
       for i, variable of @hassDevices
-        variable.handlemessage(packet)
+        variable.handleMessage(packet)
 
     update: (deviceNew) =>
       addHassDevices = []
@@ -74,8 +74,11 @@ module.exports = (env) ->
         )
 
     destroy: ->
-      for i,variable of @hassDevices
-        @hassDevices[i].destroy()
+      return new Promise((resolve,reject) =>
+        for i,variable of @hassDevices
+          @hassDevices[i].destroy()
+        resolve()
+      )
 
 
   class variableManager extends events.EventEmitter
@@ -102,7 +105,7 @@ module.exports = (env) ->
       env.logger.debug "Variable constructor " + @name + ", handlerName: " + @_handlerName
 
     handleMessage: (packet) =>
-      env.logger.debug "handlemessage sensor -> No action " + JSON.stringify(packet,null,2)
+      env.logger.debug "handlemessage sensor -> No action" # + JSON.stringify(packet,null,2)
       return
 
     getDeviceClass: ()=>

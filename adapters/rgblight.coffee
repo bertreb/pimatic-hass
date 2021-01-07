@@ -222,6 +222,9 @@ module.exports = (env) ->
         @destroy()
 
     destroy: ->
-      @device.removeListener 'state', @stateHandler
-      @device.removeListener 'dimlevel', @dimlevelHandler
-      @device.removeListener 'hue', @hueHandler
+      return new Promise((resolve,reject) =>
+        @device.removeListener 'state', @stateHandler
+        @device.removeListener 'dimlevel', @dimlevelHandler
+        @device.removeListener 'hue', @hueHandler
+        resolve()
+      )

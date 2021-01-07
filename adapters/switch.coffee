@@ -23,11 +23,11 @@ module.exports = (env) ->
       _items = (packet.topic).split('/')
       #_command = _items[1]
       _value = packet.payload
-      env.logger.debug "Action switch " + _value
       if (String _value) == "ON" then _newState = on else _newState = off
       @device.getState()
       .then((state)=>
         unless _newState is state
+          env.logger.debug "Action switch " + _value
           @device.changeStateTo(_newState)
           .then(()=>
             @publishState()
@@ -87,4 +87,7 @@ module.exports = (env) ->
         @device.removeListener 'state', @stateHandler
 
     destroy: ->
-      @device.removeListener 'state', @stateHandler
+      return new Promise((resolve,reject) =>
+        @device.removeListener 'state', @stateHandler
+        resolve()
+      )

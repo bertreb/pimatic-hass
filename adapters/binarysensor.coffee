@@ -113,7 +113,10 @@ module.exports = (env) ->
         @destroy()
 
     destroy: ->
-      if @hasContactSensor
-        @device.removeListener 'contact', @contactHandler
-      if @hasPresenceSensor
-        @device.removeListener 'presence', @presenceHandler
+      return new Promise((resolve,reject) =>
+        if @hasContactSensor
+          @device.removeListener 'contact', @contactHandler
+        if @hasPresenceSensor
+          @device.removeListener 'presence', @presenceHandler
+        resolve()
+      )
