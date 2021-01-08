@@ -21,6 +21,10 @@ module.exports = {
       description: "The discovery topic for hass"
       type: "string"
       default: "hass"
+    device_prefix:
+      description: "A pimatic style prefix for all device to identify them"
+      type: "string"
+      default: "pimatic"    
     debug:
       description: "Debug mode. Writes debug messages to the pimatic log, if set to true."
       type: "boolean"

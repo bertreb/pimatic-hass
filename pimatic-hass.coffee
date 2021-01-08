@@ -10,6 +10,7 @@ module.exports = (env) =>
   binarySensorAdapter = require('./adapters/binarysensor')(env)
   #shutterAdapter = require('./adapters/shutter')(env)
   variablesAdapter = require('./adapters/variables')(env)
+  attributesAdapter = require('./adapters/attributes')(env)
   heatingThermostatAdapter = require('./adapters/thermostat')(env)
 
   class HassPlugin extends env.plugins.Plugin
@@ -30,8 +31,10 @@ module.exports = (env) =>
       @id = @config.id
       @name = @config.name
 
-      if @_destroyed
-        return
+      #if @_destroyed
+      #  return
+
+      if @client? then @client.end()
 
       @framework.on 'destroy', () =>
         @destroy()
@@ -46,8 +49,23 @@ module.exports = (env) =>
             throw new Error "No spaced allowed in device id" 
 
       @discovery_prefix = @plugin.config.discovery_prefix ? @plugin.pluginConfigDef.discovery_prefix.default
+      @device_prefix = @plugin.config.device_prefix ? @plugin.pluginConfigDef.device_prefix.default
 
-      @mqttOptions =
+      ###
+      if @plugin.config.mqttProtocol == "MQTTS"
+        #@mqttOptions["protocolId"] = "MQTTS"
+        @mqttOptions["protocol"] = "mqtts"
+        @mqttOptions.port = 8883
+        @mqttOptions["keyPath"] = @plugin.config?.certPath or @plugin.configProperties.certPath.default
+        @mqttOptions["certPath"] = @plugin.config?.keyPath or @plugin.configProperties.keyPath.default
+        @mqttOptions["ca"] = @plugin.config?.caPath or @plugin.configProperties.caPath.default
+      else
+      ###
+
+      #setTimeout( ()=>
+      @framework.variableManager.waitForInit()
+      .then ()=>
+        @mqttOptions =
           host: @plugin.config.mqttServer ? ""
           port: @plugin.config.mqttPort ? @plugin.pluginConfigDef.mqttPort.default
           username: @plugin.config.mqttUsername ? ""
@@ -60,20 +78,8 @@ module.exports = (env) =>
           rejectUnauthorized: false
           reconnectPeriod: 15000
           debug: true # @plugin.config?.debug or false
-      ###
-      if @plugin.config.mqttProtocol == "MQTTS"
-        #@mqttOptions["protocolId"] = "MQTTS"
-        @mqttOptions["protocol"] = "mqtts"
-        @mqttOptions.port = 8883
-        @mqttOptions["keyPath"] = @plugin.config?.certPath or @plugin.configProperties.certPath.default
-        @mqttOptions["certPath"] = @plugin.config?.keyPath or @plugin.configProperties.keyPath.default
-        @mqttOptions["ca"] = @plugin.config?.caPath or @plugin.configProperties.caPath.default
-      else
-      ###
-      @mqttOptions["protocolId"] = "MQTT" # @config?.mqttProtocol or @plugin.configProperties.mqttProtocol.default
+        @mqttOptions["protocolId"] = "MQTT" # @config?.mqttProtocol or @plugin.configProperties.mqttProtocol.default
 
-      @framework.variableManager.waitForInit()
-      .then ()=>
         @client = new mqtt.connect(@mqttOptions)
         env.logger.debug "Connecting to MQTT server..."
 
@@ -92,7 +98,8 @@ module.exports = (env) =>
                   @adapters[i].publishDiscovery()
                   .then (_i)=>
                     setTimeout(()=>
-                      @adapters[_i].publishState()
+                      env.logger.debug "Empty publishState"
+                      @adapters[_i].publishState() if @adapters[_i]?
                     , 5000)
           ).catch((err)=>
             env.logger.error "Error initdevices: " + err
@@ -122,7 +129,7 @@ module.exports = (env) =>
                     setTimeout(()=>
                       env.logger.debug "Republish publishState: " + _adpt.name
                       @adapters[_i].publishState()
-                    , 5000)
+                    , 1000)
             #env.logger.debug "Hass status message received, status: " + String packet.payload
 
         @client.on 'pingreq', () =>
@@ -142,6 +149,7 @@ module.exports = (env) =>
           env.logger.info "Client disconnect"
           @_setPresence(false)
 
+          #, 10000)
 
       @framework.on 'deviceRemoved', @deviceRemovedListener = (device) =>
       for i, _adapter of @adapters
@@ -185,7 +193,7 @@ module.exports = (env) =>
               setTimeout(()=>
                 env.logger.debug "Republish publishState: " + _device.config.id
                 @adapters[_device.config.id].publishState()
-              , 5000)
+              , 1000)
 
 
       super()
@@ -198,35 +206,39 @@ module.exports = (env) =>
         #  _newAdapter = new rgblightAdapter(device, @client, @discovery_prefix)
         #  @adapters[device.id] = _newAdapter
         #  resolve(_newAdapter)
+        env.logger.debug "_.size(device.attributes)>0 " + _.size(device.attributes)
         if device instanceof env.devices.DimmerActuator or (device.hasAttribute("dimlevel") and device.hasAttribute("state"))
-          _newAdapter = new lightAdapter(device, @client, @discovery_prefix)
+          _newAdapter = new lightAdapter(device, @client, @discovery_prefix, @device_prefix)
           @adapters[device.id] = _newAdapter
           resolve(_newAdapter)
         else if device instanceof env.devices.SwitchActuator
-          _newAdapter = new switchAdapter(device, @client, @discovery_prefix)
+          _newAdapter = new switchAdapter(device, @client, @discovery_prefix, @device_prefix)
           @adapters[device.id] = _newAdapter
           resolve(_newAdapter)
         else if device.config.class is "ButtonsDevice"
-          _newAdapter = new buttonsAdapter(device, @client, @discovery_prefix)
+          _newAdapter = new buttonsAdapter(device, @client, @discovery_prefix, @device_prefix)
           @adapters[device.id] = _newAdapter
           resolve(_newAdapter)
         else if device instanceof env.devices.Sensor and device.hasAttribute("temperature") and device.hasAttribute("humidity")
-          _newAdapter = new sensorAdapter(device, @client, @discovery_prefix)
+          _newAdapter = new sensorAdapter(device, @client, @discovery_prefix, @device_prefix)
           @adapters[device.id] = _newAdapter
           resolve(_newAdapter)
         else if device instanceof env.devices.Sensor and (device.hasAttribute("contact") or device.hasAttribute("presence"))
-          _newAdapter = new binarySensorAdapter(device, @client, @discovery_prefix)
+          _newAdapter = new binarySensorAdapter(device, @client, @discovery_prefix, @device_prefix)
           @adapters[device.id] = _newAdapter
           resolve(_newAdapter)
         else if device.config.class is "VariablesDevice"
-          _newAdapter = new variablesAdapter(device, @client, @discovery_prefix)
+          _newAdapter = new variablesAdapter(device, @client, @discovery_prefix, @device_prefix)
           @adapters[device.id] = _newAdapter
           resolve(_newAdapter)
         else if device instanceof env.devices.HeatingThermostat or (device.config.class).indexOf("Thermostat") >= 0
-          _newAdapter = new heatingThermostatAdapter(device, @client, @discovery_prefix)
+          _newAdapter = new heatingThermostatAdapter(device, @client, @discovery_prefix, @device_prefix)
           @adapters[device.id] = _newAdapter
           resolve(_newAdapter)
-          #throw new Error "Device type HeatingThermostat not implemented"
+        else if _.size(device.attributes)>0 
+          _newAdapter = new attributesAdapter(device, @client, @discovery_prefix, @device_prefix)
+          @adapters[device.id] = _newAdapter
+          resolve(_newAdapter)
         else if device instanceof env.devices.ShutterController
           throw new Error "Device type ShutterController not implemented"
         else
@@ -268,7 +280,7 @@ module.exports = (env) =>
           #env.logger.debug "_adapter.id: " + _adapter.id + ", topic: " + topic
           if (topic).indexOf(_adapter.id) >= 0
             return @adapters[i]
-        env.logger.debug "Adapter for topic #{topic} not found"
+        #env.logger.debug "Adapter for topic #{topic} not found"
         return null
       catch err
         return null
@@ -280,14 +292,14 @@ module.exports = (env) =>
       catch e
         env.logger.debug "HassDevice #{@id}, Error removing listeners"
       
+      adapterCleaning = []
       for i, _adapter of @adapters
-        @adapters[i].clearAndDestroy()
-        #.then ()=>
-        delete @adapters[i]
-      try
-        @client.end()
-      catch err
-        env.logger.debug "HassDevice #{@id}, Error ending mqtt client"
+        adapterCleaning.push _adapter.clearAndDestroy()
+      Promise.all(adapterCleaning)
+      .then ()=>
+        for i, _adapter of @adapters
+          delete @adapters[i]
+        #@client.end()
       super()
 
   return new HassPlugin

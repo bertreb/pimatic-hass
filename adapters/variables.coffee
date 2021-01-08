@@ -6,7 +6,7 @@ module.exports = (env) ->
 
   class VariablesAdapter extends events.EventEmitter
 
-    constructor: (device, client, discovery_prefix) ->
+    constructor: (device, client, discovery_prefix, device_prefix) ->
 
       @name = device.name
       @id = device.id
@@ -17,7 +17,7 @@ module.exports = (env) ->
 
       for _variable in device.config.variables
         env.logger.debug "Adding variable: " + _variable.name
-        @hassDevices[_variable.name] = new variableManager(@device, _variable, @client, @discovery_prefix)
+        @hassDevices[_variable.name] = new variableManager(@device, _variable, @client, discovery_prefix, device_prefix)
 
     publishState: () =>
       for i, variable of @hassDevices
@@ -64,7 +64,7 @@ module.exports = (env) ->
       @device = deviceNew
       for _variable in addHassDevices
         env.logger.debug "Adding variable" + _variable.name
-        @hassDevices[_variable.name] = new variableManager(deviceNew, _variable, @client, @discovery_prefix)
+        @hassDevices[_variable.name] = new variableManager(deviceNew, _variable, @client, @discovery_prefix, device_prefix)
         @hassDevices[_variable.name].publishDiscovery()
         .then((_i) =>
           setTimeout( ()=>
@@ -83,7 +83,7 @@ module.exports = (env) ->
 
   class variableManager extends events.EventEmitter
 
-    constructor: (device, variable, client, discovery_prefix) ->  
+    constructor: (device, variable, client, discovery_prefix, device_prefix) ->  
       @name = device.name
       @id = device.id
       @device = device
@@ -92,7 +92,7 @@ module.exports = (env) ->
       @client = client
       @pimaticId = discovery_prefix
       @discoveryId = discovery_prefix
-      @hassDeviceId = device.id + "_" + @variable.name
+      @hassDeviceId = device_prefix + "_" + device.id + "_" + @variable.name
       @_getVar = "get" + (@variable.name).charAt(0).toUpperCase() + (@variable.name).slice(1)
       #env.logger.debug "_getVar: " + @_getVar
 
@@ -105,7 +105,7 @@ module.exports = (env) ->
       env.logger.debug "Variable constructor " + @name + ", handlerName: " + @_handlerName
 
     handleMessage: (packet) =>
-      env.logger.debug "handlemessage sensor -> No action" # + JSON.stringify(packet,null,2)
+      #env.logger.debug "handlemessage sensor -> No action" # + JSON.stringify(packet,null,2)
       return
 
     getDeviceClass: ()=>
@@ -143,8 +143,7 @@ module.exports = (env) ->
     publishDiscovery: () =>
       return new Promise((resolve,reject) =>
         _configVar = 
-          #name: @hassDeviceId
-          name: @name + "." + @variable.name
+          name: @hassDeviceId
           unique_id :@hassDeviceId
           state_topic: @discoveryId + '/sensor/' + @hassDeviceId + "/state"
           unit_of_measurement: @unit

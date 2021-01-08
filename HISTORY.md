@@ -29,3 +29,6 @@
 	* edit adding and removing Hass devices
 * 20210107, v.0.2.15
 	* added support ButtonsDevice
+* 20210107, v.0.2.16
+	* added AttributeDevice
+	* update the mqtt handling

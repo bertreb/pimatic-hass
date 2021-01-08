@@ -5,14 +5,16 @@ module.exports = (env) ->
 
   class SensorAdapter extends events.EventEmitter
 
-    constructor: (device, client, pimaticId) ->
+    constructor: (device, client, discovery_prefix, device_prefix) ->
 
       @name = device.name
       @id = device.id
       @device = device
       @client = client
-      @pimaticId = pimaticId
-      @discoveryId = pimaticId
+      @discoveryId = discovery_prefix
+      @hassDeviceId = device_prefix + "_" + device.id
+      @hassDeviceIdT = @hassDeviceId + "T"
+      @hassDeviceIdH = @hassDeviceId + "H"
       ###
       @_init = true
       @_temperature = 0
@@ -46,15 +48,17 @@ module.exports = (env) ->
       @device.on 'humidity', @humidityHandler
 
     handleMessage: (packet) =>
-      env.logger.debug "handlemessage sensor -> No action"
+      #env.logger.debug "handlemessage sensor -> No action"
       return
 
     clearDiscovery: () =>
       return new Promise((resolve,reject) =>
-        _topic = @discoveryId + '/sensor/' + @device.id + 'T/config'
+        _hassDeviceIdT = @hassDeviceId + "T"
+        _hassDeviceIdH = @hassDeviceId + "H"
+        _topic = @discoveryId + '/sensor/' + _hassDeviceIdT + '/config'
         env.logger.debug "Discovery cleared _topic: " + _topic 
         @client.publish(_topic, null, ()=>
-          _topic = @discoveryId + '/sensor/' + @device.id + 'H/config'
+          _topic = @discoveryId + '/sensor/' + _hassDeviceIdH + 'H/config'
           env.logger.debug "Discovery cleared _topic: " + _topic 
           @client.publish(_topic, null, ()=>
             resolve()
@@ -65,12 +69,13 @@ module.exports = (env) ->
     publishDiscovery: () =>
       return new Promise((resolve,reject) =>
         _configTemp = 
-          name: "Temperature " + @device.id
-          state_topic: @pimaticId + '/sensor/' + @device.id + "/state"
+          name: @hassDeviceIdT
+          unique_id: @hassDeviceIdT
+          state_topic: @discoveryId + '/sensor/' + @hassDeviceIdT + "/state"
           unit_of_measurement: "°C"
           value_template: "{{ value_json.temperature}}"
           device_class: "temperature"
-        _topic = @discoveryId + '/sensor/' + @device.id + 'T/config'
+        _topic = @discoveryId + '/sensor/' + @hassDeviceIdT + '/config'
         env.logger.debug "Publish discover _topic: " + _topic 
         env.logger.debug "Publish discover _config: " + JSON.stringify(_configTemp)
         _options =
@@ -81,12 +86,13 @@ module.exports = (env) ->
             reject()
         )
         _configHum = 
-          name: "Humidity " + @device.id
-          state_topic: @pimaticId + '/sensor/' + @device.id + "/state"
+          name: @hassDeviceIdH
+          unique_id: @hassDeviceIdH
+          state_topic: @discoveryId + '/sensor/' + @hassDeviceIdH + "/state"
           unit_of_measurement: "%"
           value_template: "{{ value_json.humidity}}"
           device_class: "humidity"
-        _topic2 = @discoveryId + '/sensor/' + @device.id + 'H/config'
+        _topic2 = @discoveryId + '/sensor/' + @hassDeviceIdH + '/config'
         env.logger.debug "Publish discover _topic2: " + _topic2 
         env.logger.debug "Publish discover _config2: " + JSON.stringify(_configHum)
         _options =
@@ -106,7 +112,7 @@ module.exports = (env) ->
         @device.getHumidity()
         .then((hum)=>
           @_humidity = hum
-          _topic = @pimaticId + '/sensor/' + @device.id + "/state"
+          _topic = @discoveryId + '/sensor/' + @hassDeviceId + "/state"
           _payload =
             temperature: @_temperature
             humidity: @_humidity

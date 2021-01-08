@@ -5,14 +5,15 @@ module.exports = (env) ->
 
   class LightAdapter extends events.EventEmitter
 
-    constructor: (device, client, pimaticId) ->
+    constructor: (device, client, discovery_prefix, device_prefix) ->
 
       @name = device.name
       @id = device.id
       @device = device
       @client = client
-      @pimaticId = pimaticId
-      @discoveryId = pimaticId
+      @discoveryId = discovery_prefix
+      @hassDeviceId = device_prefix + "_" + device.id
+
       @publishState()
 
       @dimlevelHandler = (dimlevel) =>
@@ -34,10 +35,10 @@ module.exports = (env) ->
       env.logger.debug "Action handlemessage rgblight " + _command + ", value " + _value
       try
         _parsedValue = JSON.parse(_value)
-        env.logger.info "_parsedValue.state: " + JSON.stringify(_parsedValue)
+        env.logger.debug "_parsedValue.state: " + JSON.stringify(_parsedValue)
       catch err
-        env.logger.error "No valid json received " + err
-        return
+        env.logger.debug "No valid json received " + err
+        _parsedValue = _value
 
       if _command == "set"
         if _parsedValue.state?
@@ -81,7 +82,7 @@ module.exports = (env) ->
 
     clearDiscovery: () =>
       return new Promise((resolve,reject) =>
-        _topic = @discoveryId + '/light/' + @device.id + '/config'
+        _topic = @discoveryId + '/light/' + @hassDeviceId + '/config'
         env.logger.debug "Discovery cleared _topic: " + _topic 
         @client.publish(_topic, null, ()=>
           resolve()
@@ -91,14 +92,15 @@ module.exports = (env) ->
     publishDiscovery: () =>
       return new Promise((resolve,reject) =>
         _config = 
-          name: @device.id
-          cmd_t: @discoveryId + '/' + @device.id + '/set'
-          stat_t: @discoveryId + '/' + @device.id + '/state'
+          name: @hassDeviceId
+          unique_id: @hassDeviceId
+          cmd_t: @discoveryId + '/' + @hassDeviceId + '/set'
+          stat_t: @discoveryId + '/' + @hassDeviceId + '/state'
           schema: "json"
           brightness: true
           #brightness_state_topic: @discoveryId + '/' + @device.id + '/brightness'
           #brightness_command_topic: @discoveryId + '/' + @device.id + '/brightness/set'
-        _topic = @discoveryId + '/light/' + @device.id + '/config'
+        _topic = @discoveryId + '/light/' + @hassDeviceId + '/config'
         env.logger.debug "Publish discover _topic: " + _topic 
         env.logger.debug "Publish discover _config: " + JSON.stringify(_config)
         _options =
@@ -114,11 +116,11 @@ module.exports = (env) ->
       @device.getState()
       .then((state)=>
         if state then _state = "ON" else _state = "OFF"
-        _topic = @pimaticId + '/' + @device.id + '/status'
+        _topic = @discoveryId + '/' + @hassDeviceId + '/status'
         env.logger.debug "Publish state: " + _topic + ", _state: " + _state
         @device.getDimlevel()
         .then((dimlevel)=>
-          _topic = @pimaticId + '/' + @device.id + '/state'
+          _topic = @discoveryId + '/' + @hassDeviceId + '/state'
           _dimlevel = map(dimlevel,0,100,0,255)
           _payload =
             state: _state

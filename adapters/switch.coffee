@@ -5,17 +5,23 @@ module.exports = (env) ->
 
   class SwitchAdapter extends events.EventEmitter
 
-    constructor: (device, client, pimaticId) ->
+    constructor: (device, client, discovery_prefix, device_prefix) ->
 
       @name = device.name
       @id = device.id
       @device = device
       @client = client
-      @pimaticId = pimaticId
-      @discoveryId = pimaticId
+      #@pimaticId = pimaticId
+      @discoveryId = discovery_prefix
+      @hassDeviceId = device_prefix + "_" + device.id
+
+      @device.getState()
+      .then (state) =>
+        @_state = state
  
       @stateHandler = (state) =>
         env.logger.debug "State change switch: " + state
+        @_state = state
         @publishState()
       @device.on 'state', @stateHandler
 
@@ -24,17 +30,14 @@ module.exports = (env) ->
       #_command = _items[1]
       _value = packet.payload
       if (String _value) == "ON" then _newState = on else _newState = off
-      @device.getState()
-      .then((state)=>
-        unless _newState is state
-          env.logger.debug "Action switch " + _value
-          @device.changeStateTo(_newState)
-          .then(()=>
-            @publishState()
-          ).catch(()=>
-          )
-      ).catch(()=>
-      )
+      unless @_state is _newState
+        env.logger.debug "Action switch " + _value
+        @device.changeStateTo(_newState)
+        @_state = _newState
+        #.then(()=>
+        #  #@publishState()
+        #).catch(()=>
+        #)
 
     clearDiscovery: () =>
       return new Promise((resolve,reject) =>
@@ -51,10 +54,11 @@ module.exports = (env) ->
     publishDiscovery: () =>
       return new Promise((resolve,reject) =>
         _config = 
-          name: @device.id
-          cmd_t: @pimaticId + '/' + @device.id + '/set'
-          stat_t: @pimaticId + '/' + @device.id
-        _topic = @discoveryId + '/switch/' + @device.id + '/config'
+          name: @hassDeviceId
+          unique_id: @hassDeviceId
+          cmd_t: @discoveryId + '/' + @hassDeviceId + '/set'
+          stat_t: @discoveryId + '/' + @hassDeviceId
+        _topic = @discoveryId + '/switch/' + @hassDeviceId + '/config'
         env.logger.debug "Publish discover _topic: " + _topic 
         env.logger.debug "Publish discover _config: " + JSON.stringify(_config)
         _options =
@@ -68,15 +72,13 @@ module.exports = (env) ->
       )
 
     publishState: () =>
-      @device.getState()
-      .then((state)=>
-        if state then _state = "ON" else _state = "OFF"
-        _topic = @pimaticId + '/' + @device.id 
-        _options =
-          qos : 1
-        env.logger.debug "Publish state: " + _topic + ", _state: " + _state
-        @client.publish(_topic, String _state, _options)
-      )
+      if @_state then _state = "ON" else _state = "OFF"
+      _topic = @hassDeviceId + '/' + @device.id 
+      _options =
+        qos : 1
+      env.logger.debug "Publish state: " + _topic + ", _state: " + _state
+      @client.publish(_topic, String _state, _options)
+
 
     update: () ->
       env.logger.debug "Update not implemented"

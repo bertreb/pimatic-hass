@@ -5,14 +5,17 @@ module.exports = (env) ->
 
   class BinarySensorAdapter extends events.EventEmitter
 
-    constructor: (device, client, pimaticId) ->
+    constructor: (device, client, discovery_prefix, device_prefix) ->
 
       @name = device.name
       @id = device.id
       @device = device
       @client = client
-      @pimaticId = pimaticId
-      @discoveryId = pimaticId
+      #@pimaticId = discovery_prefix
+      @discovery_prefix = discovery_prefix
+      #@device_prefix = device_prefix
+      @hassDeviceId = device_prefix + "_" + device.id
+      @discoveryId = discovery_prefix
       @hasContactSensor = false
       @hasPresenceSensor = false
  
@@ -39,11 +42,11 @@ module.exports = (env) ->
     clearDiscovery: () =>
       return new Promise((resolve,reject) =>
         if @hasContactSensor
-          _topic = @discoveryId + '/binary_sensor/' + @device.id + 'C/config'
+          _topic = @discoveryId + '/binary_sensor/' + @hassDeviceId + 'C/config'
           env.logger.debug "Discovery cleared _topic: " + _topic 
           @client.publish(_topic, null)
         if @hasPresenceSensor
-          _topic2 = @discoveryId + '/binary_sensor/' + @device.id + 'P/config'
+          _topic2 = @discoveryId + '/binary_sensor/' + @hassDeviceId + 'P/config'
           env.logger.debug "Discovery cleared _topic: " + _topic2 
           @client.publish(_topic2, null)
         resolve()
@@ -53,10 +56,11 @@ module.exports = (env) ->
       return new Promise((resolve,reject) =>
         if @hasContactSensor
           _configC = 
-            name: @device.id
-            stat_t: @pimaticId + '/binary_sensor/' + @device.id + 'C/state'
+            name: @hassDeviceId
+            unique_id: @hassDeviceId
+            stat_t: @discoveryId + '/binary_sensor/' + @hassDeviceId + 'C/state'
             device_class: "opening"
-          _topic = @discoveryId + '/binary_sensor/' + @device.id + 'C/config'
+          _topic = @discoveryId + '/binary_sensor/' + @hassDeviceId + 'C/config'
           env.logger.debug "Publish discover _topic: " + _topic 
           env.logger.debug "Publish discover _configContact: " + JSON.stringify(_configC)
           _options =
@@ -67,10 +71,11 @@ module.exports = (env) ->
           )
         if @hasPresenceSensor
           _configP = 
-            name: @device.id
-            stat_t: @pimaticId + '/binary_sensor/' + @device.id + 'P/state'
+            name: @hassDeviceId
+            unique_id: @hassDeviceId
+            stat_t: @discoveryId + '/binary_sensor/' + @hassDeviceId + 'P/state'
             device_class: "motion"
-          _topic2 = @discoveryId + '/binary_sensor/' + @device.id + 'P/config'
+          _topic2 = @discoveryId + '/binary_sensor/' + @hassDeviceId + 'P/config'
           env.logger.debug "Publish discover _topic: " + _topic2
           env.logger.debug "Publish discover _configPresence: " + JSON.stringify(_configP)
           _options =
@@ -87,7 +92,7 @@ module.exports = (env) ->
         @device.getContact()
         .then((contact)=>
           if contact then _state = "ON" else _state = "OFF"
-          _topic = @pimaticId + '/binary_sensor/' + @device.id + 'C/state'
+          _topic = @discoveryId + '/binary_sensor/' + @hassDeviceId + 'C/state'
           env.logger.debug "Publish contact: " + _topic + ", _state: " + _state
           _options =
             qos : 1
@@ -97,7 +102,7 @@ module.exports = (env) ->
         @device.getPresence()
         .then((presence)=>
           if presence then _state = "ON" else _state = "OFF"
-          _topic2 = @pimaticId + '/binary_sensor/' + @device.id + 'P/state'
+          _topic2 = @discoveryId + '/binary_sensor/' + @hassDeviceId + 'P/state'
           env.logger.debug "Publish presence: " + _topic2 + ", _state: " + _state
           _options =
             qos : 1

@@ -6,14 +6,14 @@ module.exports = (env) ->
 
   class RGBLightAdapter extends events.EventEmitter
 
-    constructor: (device, client, pimaticId) ->
+    constructor: (device, client, discovery_prefix, device_prefix) ->
 
       @name = device.name
       @id = device.id
       @device = device
       @client = client
-      @pimaticId = pimaticId
-      @discoveryId = pimaticId
+      @discoveryId = discovery_prefix
+      @hassDeviceId = device_prefix + "_" + device.id
 
       @saturation = 0
       @lightness = 0
@@ -45,9 +45,9 @@ module.exports = (env) ->
       env.logger.debug "Action handlemessage rgblight " + _command + ", value " + _value
       try
         _parsedValue = JSON.parse(_value)
-        env.logger.info "_parsedValue.state: " + JSON.stringify(_parsedValue)
-      catch err
-        env.logger.error "No valid json received " + err
+        env.logger.debug "_parsedValue.state: " + JSON.stringify(_parsedValue)
+      catch 
+        env.logger.debug "Incorrent _value received: " + _value
         return
 
       if _command == "set"
@@ -110,7 +110,7 @@ module.exports = (env) ->
 
     clearDiscovery: () =>
       return new Promise((resolve,reject) =>
-        _topic = @discoveryId + '/' + @device.id + '/config'
+        _topic = @discoveryId + '/' + @hassDeviceId + '/config'
         env.logger.debug "Discovery cleared _topic: " + _topic 
         @client.publish(_topic, null, ()=>
           resolve()
@@ -120,9 +120,10 @@ module.exports = (env) ->
     publishDiscovery: () =>
       return new Promise((resolve,reject) =>
         _config = 
-          name: @device.id
-          cmd_t: @discoveryId + '/' + @device.id + '/set'
-          stat_t: @discoveryId + '/' + @device.id + '/state'
+          name: @hassDeviceId
+          unique_id: @hassDeviceId
+          cmd_t: @discoveryId + '/' + @hassDeviceId + '/set'
+          stat_t: @discoveryId + '/' + @hassDeviceId + '/state'
           schema: "json"
           brightness: true
           rgb: true
@@ -134,7 +135,7 @@ module.exports = (env) ->
           #brightness_value_template: "{{ value_json.brightness }}"
           #rgb_value_template: "{{ value_json.rgb | join(',') }}"
           #optimistic: false
-        _topic = @discoveryId + '/light/' + @device.id + '/config'
+        _topic = @discoveryId + '/light/' + @hassDeviceId + '/config'
         env.logger.debug "Publish discover _topic: " + _topic 
         env.logger.debug "Publish discover _config: " + JSON.stringify(_config)
         _options =
