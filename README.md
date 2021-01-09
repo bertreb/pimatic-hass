@@ -70,7 +70,7 @@ The Hass device name is:
 ```
 The "pimatic attribute-id" is used for variables, button and sensor devices
 
-The related Hass device friendly name is (shows on the HAss gui)
+The related Hass device friendly name is: (shows on the HAss gui)
 ```
 <pimatic device_prefix: <pimatic device-id> [.<pimatic attribute-id>]
 ```
