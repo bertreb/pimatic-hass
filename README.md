@@ -46,7 +46,7 @@ After saving the device config, the connection to Home Assistant is established 
 
 The device type of a Pimatic device determines the Home assistant Device type that is created in Home Assistant device.
 
-Currently the following Pimatic devices are supported.
+Currently the following types of Pimatic devices are supported.
 
 |Pimatic  |direction | Hass | States
 |------------|:--------:|----------|-------------------|
@@ -54,7 +54,6 @@ Currently the following Pimatic devices are supported.
 |Presence | 1-way   | Binary   | motion (not) detected
 |Light    | 2-way   | Light    | light on/off, brightness
 |Contact  | 1-way   | Binary   | opened/closed
-|Presence  | 1-way   | Binary   | absent/present
 |Sensor | 1-way   | Value   | all attributes
 |Variables| 1-way	| Variable | variable value
 
