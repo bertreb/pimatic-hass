@@ -29,15 +29,26 @@ module.exports = (env) ->
         for i, variable of @hassDevices
           publishDiscoveries.push variable.publishDiscovery()
           Promise.all(publishDiscoveries)
-          resolve @id
+          .then ()=>
+            resolve @id
         )
-        
+
     clearAndDestroy: () =>
-      for i, variable of @hassDevices
-        @hassDevices[i].clearDiscovery()
+      return new Promise((resolve,reject) =>
+        clears =[]
+        destroys =[]
+        for i, variable of @hassDevices
+          clears.push @hassDevices[i].clearDiscovery()
+          destroys.push @hassDevices[i].destroy()
+        Promise.all(clears)
         .then ()=>
-          @hassDevices[i].destroy()
-    
+          return Promise.all(destroys)
+        .then ()=>
+          resolve()
+        .catch (err) =>
+          env.logger.debug "Error clear and destroy "
+      )
+            
     clearDiscovery: () =>
       for i, variable of @hassDevices
         @hassDevices[i].clearDiscovery()
@@ -189,7 +200,10 @@ module.exports = (env) ->
       )
 
     destroy: ->
-      @device.removeListener @_variableName, @[@_handlerName]
-      #@clearDiscovery()
+      return new Promise((resolve,reject) =>
+        @device.removeListener @_variableName, @[@_handlerName]
+        #@clearDiscovery()
+        resolve()
+      )
 
   module.exports = VariablesAdapter

@@ -207,6 +207,7 @@ module.exports = (env) ->
       return new Promise((resolve,reject) =>
         @device.removeListener @_attributeName, @[@_handlerName]
         #@clearDiscovery()
+        resolve()
       )
 
   module.exports = SensorAdapter

@@ -36,5 +36,5 @@
 	* combined attribute device in sensor device
 	* improved (re)start handling
 	* introduced friendly name
-* 20210109, v.0.2.18
+* 20210109, v.0.2.19
 	* fix device delete handling

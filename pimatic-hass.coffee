@@ -107,15 +107,24 @@ module.exports = (env) =>
               if !_.find(@config.devices, (deviceC) => deviceC == _deviceId )
                 removeHassDevices.push _deviceId
 
+            if _.size(@config.devices) > 0
+              @_setPresence(true)
+            else
+              @_setPresence(false)
+            
+
             env.logger.debug "addHassDevices: " + JSON.stringify(addHassDevices,null,2)
             env.logger.debug "removeHassDevices: " + JSON.stringify(removeHassDevices,null,2)
             for _deviceId in removeHassDevices
-              env.logger.debug "Removing device: " + _deviceId
-              @adapters[_deviceId].clearAndDestroy()
-              .then ()=>
-                delete @adapter[_deviceId]
-              .catch (err)=>
-                env.logger.debug "Device '#{_deviceId}' can't be removed " + err
+              if @adapters[_deviceId]?
+                env.logger.debug "Removing device: " + _deviceId
+                @adapters[_deviceId].clearAndDestroy()
+                .then ()=>
+                  delete @adapters[_deviceId]
+                .catch (err)=>
+                  env.logger.debug "Device '#{_deviceId}' can't be removed " + err
+              else
+                env.logger.debug "Adapter does not exist: " + _deviceId
 
 
             for _deviceId in addHassDevices
@@ -127,26 +136,24 @@ module.exports = (env) =>
                   .then () =>
                     return @adapters[_device.id].publishDiscovery()
                   .then (_i)=>
-                    setTimeout( ()=>
-                      @adapters[_device.id].publishState()
+                    setTimeout(()=>
+                      @adapters[_i].publishState()
                     , 5000)
                   .catch (err) =>
                     env.logger.debug "Device '#{_deviceId}' can't be added " + err
               else
                 env.logger.debug "Device '#{_deviceId}' does not exist " + err
 
-            if _.size(@adapters) > 0
-              @_setPresence(true)
-
-            
         @client.on 'message', (topic, message, packet) =>
-          env.logger.debug("message received with topic: " + (topic) + ", for adapter: " + _adapter.id) if _adapter?
+          #env.logger.debug "message received with topic: " + (topic)
           if topic.startsWith(@discovery_prefix + "/status")
             if (String packet.payload).indexOf("offline") >= 0
+              env.logger.info "Hass offline"
               @_setPresence(false)
             if (String packet.payload).indexOf("online") >= 0 
+              env.logger.info "Hass online"
               @_setPresence(true)
-              env.logger.debug "RePublish devices to Hass"
+              env.logger.debug "ReDiscover and Publish devices to Hass"
               for i,_adapter of @adapters
                 @adapters[i].publishDiscovery()
                 .then (_i)=>
@@ -158,7 +165,6 @@ module.exports = (env) =>
             if _adapterId?
               @adapters[_adapterId].handleMessage(packet)
 
-            #env.logger.debug "Hass status message received, status: " + String packet.payload
 
         @client.on 'pingreq', () =>
           env.logger.debug "Ping request, answering with pingresp"
@@ -186,7 +192,6 @@ module.exports = (env) =>
             delete @adapters[i]
 
       @framework.on 'deviceChanged', @deviceChangedListener = (device) =>
-        return
         env.logger.debug "Device changed: " + device.config.id
         unless device.config.id is @id #This Hass device is changed via recreation
           # one of the used device can be changed
@@ -294,12 +299,8 @@ module.exports = (env) =>
         _adapter = _.find(@adapters, (a)=> topic.indexOf(a.id)>= 0)
         if _adapter?
           return _adapter.id
-        #for i, _adapter of @adapters
-        #  #env.logger.debug "_adapter.id: " + _adapter.id + ", topic: " + topic
-        #  if (topic).indexOf(_adapter.id) >= 0
-        #    return i
         else
-          env.logger.debug "Adapter for topic #{topic} not found"
+          #env.logger.debug "Adapter for topic #{topic} not found"
           return null
       catch err
         return null
