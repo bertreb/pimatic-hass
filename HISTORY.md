@@ -32,3 +32,6 @@
 * 20210107, v.0.2.16
 	* added AttributeDevice
 	* update the mqtt handling
+* 20210109, v.0.2.17
+	* combined attribute device in sensor device
+	* improved (re)start handling

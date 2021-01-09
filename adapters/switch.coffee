@@ -14,6 +14,7 @@ module.exports = (env) ->
       #@pimaticId = pimaticId
       @discoveryId = discovery_prefix
       @hassDeviceId = device_prefix + "_" + device.id
+      @hassDeviceFriendlyName = device_prefix + ": " + device.id
 
       @device.getState()
       .then (state) =>
@@ -41,7 +42,7 @@ module.exports = (env) ->
 
     clearDiscovery: () =>
       return new Promise((resolve,reject) =>
-        _topic = @discoveryId + '/switch/' + @device.id + '/config'
+        _topic = @discoveryId + '/switch/' + @hassDeviceId + '/config'
         env.logger.debug "Discovery cleared _topic: " + _topic 
         @client.publish(_topic, null, (err)=>
           if err
@@ -54,7 +55,7 @@ module.exports = (env) ->
     publishDiscovery: () =>
       return new Promise((resolve,reject) =>
         _config = 
-          name: @hassDeviceId
+          name: @hassDeviceFriendlyName #@hassDeviceId
           unique_id: @hassDeviceId
           cmd_t: @discoveryId + '/' + @hassDeviceId + '/set'
           stat_t: @discoveryId + '/' + @hassDeviceId
@@ -73,7 +74,7 @@ module.exports = (env) ->
 
     publishState: () =>
       if @_state then _state = "ON" else _state = "OFF"
-      _topic = @hassDeviceId + '/' + @device.id 
+      _topic = @discoveryId + '/' + @hassDeviceId
       _options =
         qos : 1
       env.logger.debug "Publish state: " + _topic + ", _state: " + _state

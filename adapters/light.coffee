@@ -13,6 +13,7 @@ module.exports = (env) ->
       @client = client
       @discoveryId = discovery_prefix
       @hassDeviceId = device_prefix + "_" + device.id
+      @hassDeviceFriendlyName = device_prefix + ": " + device.id
 
       @publishState()
 
@@ -92,7 +93,7 @@ module.exports = (env) ->
     publishDiscovery: () =>
       return new Promise((resolve,reject) =>
         _config = 
-          name: @hassDeviceId
+          name: @hassDeviceFriendlyName
           unique_id: @hassDeviceId
           cmd_t: @discoveryId + '/' + @hassDeviceId + '/set'
           stat_t: @discoveryId + '/' + @hassDeviceId + '/state'

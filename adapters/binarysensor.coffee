@@ -11,10 +11,10 @@ module.exports = (env) ->
       @id = device.id
       @device = device
       @client = client
-      #@pimaticId = discovery_prefix
-      @discovery_prefix = discovery_prefix
-      #@device_prefix = device_prefix
+
+      @discoveryId = discovery_prefix
       @hassDeviceId = device_prefix + "_" + device.id
+      @hassDeviceFriendlyName = device_prefix + ": " + device.id
       @discoveryId = discovery_prefix
       @hasContactSensor = false
       @hasPresenceSensor = false
@@ -56,7 +56,7 @@ module.exports = (env) ->
       return new Promise((resolve,reject) =>
         if @hasContactSensor
           _configC = 
-            name: @hassDeviceId
+            name: hassDeviceFriendlyName + " contact"
             unique_id: @hassDeviceId
             stat_t: @discoveryId + '/binary_sensor/' + @hassDeviceId + 'C/state'
             device_class: "opening"
@@ -71,7 +71,7 @@ module.exports = (env) ->
           )
         if @hasPresenceSensor
           _configP = 
-            name: @hassDeviceId
+            name: hassDeviceFriendlyName + " motion"
             unique_id: @hassDeviceId
             stat_t: @discoveryId + '/binary_sensor/' + @hassDeviceId + 'P/state'
             device_class: "motion"

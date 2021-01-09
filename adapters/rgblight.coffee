@@ -14,6 +14,7 @@ module.exports = (env) ->
       @client = client
       @discoveryId = discovery_prefix
       @hassDeviceId = device_prefix + "_" + device.id
+      @hassDeviceFriendlyName = device_prefix + ": " + device.id
 
       @saturation = 0
       @lightness = 0
@@ -120,7 +121,7 @@ module.exports = (env) ->
     publishDiscovery: () =>
       return new Promise((resolve,reject) =>
         _config = 
-          name: @hassDeviceId
+          name: hassDeviceFriendlyName
           unique_id: @hassDeviceId
           cmd_t: @discoveryId + '/' + @hassDeviceId + '/set'
           stat_t: @discoveryId + '/' + @hassDeviceId + '/state'
@@ -156,7 +157,7 @@ module.exports = (env) ->
           _dimlevel = map(dimlevel,0,100,0,255)
           @device.getHue()
           .then((hue)=>
-            _topic = @pimaticId + '/' + @device.id + '/state'
+            _topic = @discoveryId + '/' + @hassDeviceId + '/state'
             _rgb = convert.hsl.rgb(hue, @saturation, @lightness)
             env.logger.debug "RGB to publish: " + _rgb
             _payload =

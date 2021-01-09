@@ -54,7 +54,8 @@ Currently the following Pimatic devices are supported.
 |Presence | 1-way   | Binary   | motion (not) detected
 |Light    | 2-way   | Light    | light on/off, brightness
 |Contact  | 1-way   | Binary   | opened/closed
-|Temp/hum | 1-way   | Binary   | temperature, humidity
+|Presence  | 1-way   | Binary   | absent/present
+|Sensor | 1-way   | Value   | all attributes
 |Variables| 1-way	| Variable | variable value
 
 For usage of variables you need to put the variables in a Pimatic VariablesDevice.

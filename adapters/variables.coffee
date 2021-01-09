@@ -93,6 +93,7 @@ module.exports = (env) ->
       @pimaticId = discovery_prefix
       @discoveryId = discovery_prefix
       @hassDeviceId = device_prefix + "_" + device.id + "_" + @variable.name
+      @hassDeviceFriendlyName = device_prefix + ": " + device.id + "." + @variable.name
       @_getVar = "get" + (@variable.name).charAt(0).toUpperCase() + (@variable.name).slice(1)
       #env.logger.debug "_getVar: " + @_getVar
 
@@ -143,7 +144,7 @@ module.exports = (env) ->
     publishDiscovery: () =>
       return new Promise((resolve,reject) =>
         _configVar = 
-          name: @hassDeviceId
+          name: @hassDeviceFriendlyName
           unique_id :@hassDeviceId
           state_topic: @discoveryId + '/sensor/' + @hassDeviceId + "/state"
           unit_of_measurement: @unit

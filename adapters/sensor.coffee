@@ -2,6 +2,7 @@ module.exports = (env) ->
   Promise = env.require 'bluebird'
   assert = env.require 'cassert'
   events = require 'events'
+  _ = require("lodash")
 
   class SensorAdapter extends events.EventEmitter
 
@@ -11,133 +12,186 @@ module.exports = (env) ->
       @id = device.id
       @device = device
       @client = client
-      @discoveryId = discovery_prefix
-      @hassDeviceId = device_prefix + "_" + device.id
-      @hassDeviceIdT = @hassDeviceId + "T"
-      @hassDeviceIdH = @hassDeviceId + "H"
-      ###
-      @_init = true
-      @_temperature = 0
-      @_humidity = 0
-      @device.getTemperature()
-      .then((temp)=>
-        @_temperature = temp
-      ).catch((err) =>
-        env.logger.info "Error getTemperature: " + err
-      )
-      @device.getHumidity()
-      .then((hum)=>
-        @_humidity = hum
-      ).catch((err) =>
-        env.logger.info "Error getTemperature: " + err
-      )
-      ###
+      @discovery_prefix = discovery_prefix
+      @hassDevices = {}
 
-      @temperatureHandler = (temp) =>
-        env.logger.debug "Temperature change: " + temp
-        #if @_temperature isnt temp
-        #  @_temperature = temp
-        @publishState()
-      @device.on 'temperature', @temperatureHandler
+      #env.logger.debug "Constructor AttributeAdapter: " + JSON.stringify(@device.attributes,null,2)
+      for _a, _attribute of @device.attributes
+        env.logger.debug "Adding attribute: " + _a
+        @hassDevices[_a] = new attributeManager(@device, _a, @client, @discovery_prefix, device_prefix)
 
-      @humidityHandler = (hum) =>
-        env.logger.debug "Humidity change: " + hum
-        #if @_humidity isnt hum
-        #  @_humidity = hum
-        @publishState()
-      @device.on 'humidity', @humidityHandler
-
-    handleMessage: (packet) =>
-      #env.logger.debug "handlemessage sensor -> No action"
-      return
-
-    clearDiscovery: () =>
-      return new Promise((resolve,reject) =>
-        _hassDeviceIdT = @hassDeviceId + "T"
-        _hassDeviceIdH = @hassDeviceId + "H"
-        _topic = @discoveryId + '/sensor/' + _hassDeviceIdT + '/config'
-        env.logger.debug "Discovery cleared _topic: " + _topic 
-        @client.publish(_topic, null, ()=>
-          _topic = @discoveryId + '/sensor/' + _hassDeviceIdH + 'H/config'
-          env.logger.debug "Discovery cleared _topic: " + _topic 
-          @client.publish(_topic, null, ()=>
-            resolve()
-          )
-        )
-      )
+    publishState: () =>
+      for i, _attribute of @hassDevices
+        @hassDevices[i].publishState()
 
     publishDiscovery: () =>
       return new Promise((resolve,reject) =>
-        _configTemp = 
-          name: @hassDeviceIdT
-          unique_id: @hassDeviceIdT
-          state_topic: @discoveryId + '/sensor/' + @hassDeviceIdT + "/state"
-          unit_of_measurement: "°C"
-          value_template: "{{ value_json.temperature}}"
-          device_class: "temperature"
-        _topic = @discoveryId + '/sensor/' + @hassDeviceIdT + '/config'
-        env.logger.debug "Publish discover _topic: " + _topic 
-        env.logger.debug "Publish discover _config: " + JSON.stringify(_configTemp)
-        _options =
-          qos : 1
-        @client.publish(_topic, JSON.stringify(_configTemp), _options, (err) =>
-          if err
-            env.logger.error "Error publishing Discovery Temperature  " + err
-            reject()
+        publishDiscoveries = []
+        for i, _attribute of @hassDevices
+          publishDiscoveries.push _attribute.publishDiscovery()
+          Promise.all(publishDiscoveries)
+          resolve @id
         )
-        _configHum = 
-          name: @hassDeviceIdH
-          unique_id: @hassDeviceIdH
-          state_topic: @discoveryId + '/sensor/' + @hassDeviceIdH + "/state"
-          unit_of_measurement: "%"
-          value_template: "{{ value_json.humidity}}"
-          device_class: "humidity"
-        _topic2 = @discoveryId + '/sensor/' + @hassDeviceIdH + '/config'
-        env.logger.debug "Publish discover _topic2: " + _topic2 
-        env.logger.debug "Publish discover _config2: " + JSON.stringify(_configHum)
-        _options =
-          qos : 1
-        @client.publish(_topic2, JSON.stringify(_configHum), _options, (err) =>
+        
+    clearAndDestroy: () =>
+      for i, _attribute of @hassDevices
+        @hassDevices[i].clearDiscovery()
+        .then ()=>
+          @hassDevices[i].destroy()
+    
+    clearDiscovery: () =>
+      for i, _attribute of @hassDevices
+        @hassDevices[i].clearDiscovery()
+
+    handleMessage: (packet) =>
+      for i, _attribute of @hassDevices
+        @hassDevices[i].handleMessage(packet)
+
+    update: (deviceNew) =>
+      addHassDevices = []
+      removeHassDevices = []
+
+      for _a, _attribute of deviceNew.attributes
+        if !_.find(@hassDevices, (hassD) => hassD.attributeName == _a )
+          addHassDevices.push deviceNew.attributes[_a]
+      removeHassDevices = _.differenceWith(@device.attributes,deviceNew.attributes, _.isEqual)
+      for removeDevice in removeHassDevices
+        env.logger.debug "Removing attribute " + removeDevice.name
+        @hassDevices[removeDevice.name].clearDiscovery()
+        .then ()=>
+          @hassDevices[removeDevice.name].destroy()
+          delete @hassDevices[removeDevice.name]
+
+      @device = deviceNew
+      for _attribute in addHassDevices
+        env.logger.debug "Adding attribute" + _attribute.name
+        @hassDevices[_attribute.name] = new attributeManager(deviceNew, _attribute, @client, @discovery_prefix, device_prefix)
+        @hassDevices[_attribute.name].publishDiscovery()
+        .then((_i) =>
+          setTimeout( ()=>
+            @hassDevices[_i].publishState()
+          , 5000)
+        ).catch((err) =>
+        )
+
+    destroy: ->
+      return new Promise((resolve,reject) =>
+        for i,_attribute of @hassDevices
+          @hassDevices[i].destroy()
+        resolve()
+      )
+
+
+  class attributeManager extends events.EventEmitter
+
+    constructor: (device, attributeName, client, discovery_prefix, device_prefix) ->  
+      @name = device.name
+      @id = device.id
+      @device = device
+      @attributeName = attributeName
+      @unit = @device.attributes[@attributeName].unit ? ""
+      @client = client
+      @pimaticId = discovery_prefix
+      @discoveryId = discovery_prefix
+      @device_prefix = device_prefix
+      @hassDeviceId = device_prefix+ "_" + device.id + "_" + @attributeName
+      @hassDeviceFriendlyName = device_prefix + ": " + device.id + "." + @attributeName
+      @_getVar = "get" + (@attributeName).charAt(0).toUpperCase() + (@attributeName).slice(1)
+      env.logger.debug "@unit: " + @unit
+
+      @_attributeName = @attributeName
+      @_handlerName = @attributeName + "Handler"
+      @[@_handlerName] = (val) =>
+        env.logger.debug "Attribute '#{@attributeName}' change: " + val
+        @publishState()
+      @device.on @_attributeName, @[@_handlerName]
+      env.logger.debug "Attribute constructor " + @name + ", handlerName: " + @_handlerName
+
+    handleMessage: (packet) =>
+      #env.logger.debug "handlemessage sensor -> No action" # + JSON.stringify(packet,null,2)
+      return
+
+    getDeviceClass: (_unit)=>
+      if _unit is "hPa" or _unit is "mbar"
+        @device_class = "pressure"
+      else if _unit is "kWh" or _unit is "Wh" or _unit is "mWh"
+        @device_class = "energy"
+      else if _unit is "W" or _unit is "kW" or _unit is "mW"
+        @device_class = "power"
+      else if _unit is "lx" or _unit is "lm"
+        @device_class = "illuminance"
+      else if _unit is "A" or _unit is "kA" or _unit is "mA"
+        @device_class = "current"
+      else if _unit is "V" or _unit is "mV" or _unit is "kV"
+        @device_class = "voltage"
+      else if _unit is "°C" or _unit is "°F"
+        @device_class = "temperature"
+      else
+        @device_class = null
+      env.logger.debug "getDeviceClass: " + _unit + ", class: " + @device_class
+      return @device_class
+
+    clearDiscovery: () =>
+      return new Promise((resolve,reject) =>
+        _topic = @discoveryId + '/sensor/' + @hassDeviceId + '/config'
+        env.logger.debug "Discovery cleared _topic: " + _topic 
+        @client.publish(_topic, null, (err) =>
           if err
-            env.logger.error "Error publishing Discovery Humidity " + err
+            env.logger.error "Error publishing Discovery Variable  " + err
             reject()
           resolve()
         )
       )
 
-    publishState: () =>
-      @device.getTemperature()
-      .then((temp)=>
-        @_temperature = temp
-        @device.getHumidity()
-        .then((hum)=>
-          @_humidity = hum
-          _topic = @discoveryId + '/sensor/' + @hassDeviceId + "/state"
-          _payload =
-            temperature: @_temperature
-            humidity: @_humidity
-          env.logger.debug "_stateTopic: " + _topic + ",  payload: " +  JSON.stringify(_payload)
-          _options =
-            qos : 1
-          @client.publish(_topic, JSON.stringify(_payload), _options)
-        ).catch((err) =>
-          env.logger.info "Error getting Humidity: " + err
+    publishDiscovery: () =>
+      return new Promise((resolve,reject) =>
+        _configVar = 
+          name: @hassDeviceFriendlyName
+          unique_id :@hassDeviceId
+          state_topic: @discoveryId + '/sensor/' + @hassDeviceId + "/state"
+          unit_of_measurement: @unit
+          value_template: "{{ value_json.variable}}"
+        _deviceClass = @getDeviceClass(@unit)
+        if _deviceClass?
+          _configVar["device_class"] = _deviceClass
+        _topic = @discoveryId + '/sensor/' + @hassDeviceId + '/config'
+        env.logger.debug "Publish discover _topic: " + _topic 
+        env.logger.debug "Publish discover _config: " + JSON.stringify(_configVar)
+        _options =
+          qos : 1
+        @client.publish(_topic, JSON.stringify(_configVar), _options,  (err) =>
+          if err
+            env.logger.error "Error publishing Discovery Variable  " + err
+            reject()
+          resolve(@attributeName)
         )
-      ).catch((err) =>
-        env.logger.info "Error getting Temperature: " + err
       )
 
-    update: () ->
-      env.logger.debug "Update not implemented"
-
-    clearAndDestroy: ->
-      @clearDiscovery()
-      .then () =>
-        @destroy()
+    publishState: () =>
+      return new Promise((resolve,reject) =>
+        try
+          @device[@_getVar]()
+          .then (val)=>
+            _topic = @discoveryId + '/sensor/' + @hassDeviceId + "/state"
+            _payload =
+              variable: String val
+            env.logger.debug "_stateTopic: " + _topic + ",  payload: " +  JSON.stringify(_payload)
+            _options =
+              qos : 1
+            @client.publish(_topic, JSON.stringify(_payload), _options, (err) =>
+              if err
+                env.logger.error "Error publishing state attribute  " + err
+                reject()
+              resolve()
+            )
+          .catch (err)=>
+            env.logger.debug "handled error getting attribute " + @_getVar + ", err: " + JSON.stringify(err,null,2)
+        catch err
+          env.logger.debug "handled error in @_getVar: " + @_getVar + ", err: " + JSON.stringify(err,null,2) 
+      )
 
     destroy: ->
-      return new Promise((resolve,reject) =>
-        @device.removeListener 'temperature', @temperatureHandler
-        @device.removeListener 'humidity', @humidityHandler
-        resolve()
-      )
+      @device.removeListener @_attributeName, @[@_handlerName]
+      #@clearDiscovery()
+
+  module.exports = SensorAdapter
