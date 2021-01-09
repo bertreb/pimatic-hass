@@ -11,10 +11,10 @@ In the configurator you open the file "configuration.yaml" and add the following
 
 ```
 mqtt:
-  broker: <broker ip address>
-  username: <broker username>
-  password: <broker password>
-  port: <broker port>
+  broker: The broker ip address
+  username: The broker username
+  password: The broker password
+  port: The used broker port
   discovery: true
   discovery_prefix: hass
   birth_message:
@@ -48,9 +48,9 @@ mqttPassword: The password for the mqtt server
 mqttPort: The portnumber of the mqtt api
   default: 1883
 discovery_prefix: The discovery topic for hass
-  default: hass
+  default: "hass"
 device_prefix: A pimatic style prefix for all device to identify them
-  default: pimatic 
+  default: "pimatic"
 debug: Debug mode. Writes debug messages to the pimatic log, if set to true.
   default: false
 ```
