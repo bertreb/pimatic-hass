@@ -111,7 +111,7 @@ module.exports = (env) =>
             env.logger.debug "removeHassDevices: " + JSON.stringify(removeHassDevices,null,2)
             for _deviceId in removeHassDevices
               env.logger.debug "Removing device: " + _deviceId
-              @adapter[_deviceId].clearAndDiscovery()
+              @adapters[_deviceId].clearAndDestroy()
               .then ()=>
                 delete @adapter[_deviceId]
               .catch (err)=>

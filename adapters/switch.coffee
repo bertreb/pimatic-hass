@@ -84,10 +84,16 @@ module.exports = (env) ->
     update: () ->
       env.logger.debug "Update not implemented"
 
-    clearAndDestroy: ->
-      @clearDiscovery()
-      .then () =>
-        @device.removeListener 'state', @stateHandler
+    clearAndDestroy: () =>
+      return new Promise((resolve,reject) =>
+        @clearDiscovery()
+        .then ()=>
+          return @destroy()
+        .then ()=>
+          resolve()
+        .catch (err) =>
+          env.logger.debug "Error clear and destroy "
+      )
 
     destroy: ->
       return new Promise((resolve,reject) =>

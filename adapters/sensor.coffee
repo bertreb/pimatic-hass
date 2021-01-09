@@ -30,14 +30,25 @@ module.exports = (env) ->
         for i, _attribute of @hassDevices
           publishDiscoveries.push _attribute.publishDiscovery()
           Promise.all(publishDiscoveries)
-          resolve @id
+          .then ()=>
+            resolve @id
         )
         
     clearAndDestroy: () =>
-      for i, _attribute of @hassDevices
-        @hassDevices[i].clearDiscovery()
+      return new Promise((resolve,reject) =>
+        clears =[]
+        destroys =[]
+        for i, button of @hassDevices
+          clears.push @hassDevices[i].clearDiscovery()
+          destroys.push @hassDevices[i].destroy()
+        Promise.all(clears)
         .then ()=>
-          @hassDevices[i].destroy()
+          return Promise.all(destroys)
+        .then ()=>
+          resolve()
+        .catch (err) =>
+          env.logger.debug "Error clear and destroy "
+      )
     
     clearDiscovery: () =>
       for i, _attribute of @hassDevices
@@ -74,12 +85,14 @@ module.exports = (env) ->
         ).catch((err) =>
         )
 
+    ###
     destroy: ->
       return new Promise((resolve,reject) =>
         for i,_attribute of @hassDevices
           @hassDevices[i].destroy()
         resolve()
       )
+    ###
 
 
   class attributeManager extends events.EventEmitter
@@ -191,7 +204,9 @@ module.exports = (env) ->
       )
 
     destroy: ->
-      @device.removeListener @_attributeName, @[@_handlerName]
-      #@clearDiscovery()
+      return new Promise((resolve,reject) =>
+        @device.removeListener @_attributeName, @[@_handlerName]
+        #@clearDiscovery()
+      )
 
   module.exports = SensorAdapter
