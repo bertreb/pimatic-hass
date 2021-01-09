@@ -11,10 +11,10 @@ In the configurator you open the file "configuration.yaml" and add the following
 
 ```
 mqtt:
-  broker: The broker ip address
-  username: The broker username
-  password: The broker password
-  port: The used broker port
+  broker: <the broker ip address>
+  username: <the broker username>
+  password: <the broker password>
+  port: <the used broker port>
   discovery: true
   discovery_prefix: hass
   birth_message:
