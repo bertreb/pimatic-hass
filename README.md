@@ -75,7 +75,7 @@ The related Hass device friendly name is: (shows on the HAss gui)
 <pimatic device_prefix: <pimatic device-id> [.<pimatic attribute-id>]
 ```
 
-For the VariablesDevice the Hass Device is \<hass device type\>.\<Pimatic VariableDevice id\>\_\<Pimatic variable name\>. In the Hass Gui you can group variables on 1 card.
+For the VariablesDevice or the SensorDevice the Hass Device is "sensor.\<Pimatic VariableDevice id\>\_\<Pimatic variable name\>". In the Hass Gui you can group sensors and variables on 1 card.
 
 When you remove a Pimatic device from the config, in Home Assistant the card will get yellow and show the message 'entity not available'. You need to remove the card if you want to get rid of this message. If you leave the card in the Gui the entity becomes active again when you add the same Pimatic device again to the config.
 
