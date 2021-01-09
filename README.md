@@ -57,12 +57,23 @@ Currently the following types of Pimatic devices are supported.
 |Sensor | 1-way   | Value   | all attributes
 |Variables| 1-way	| Variable | variable value
 
-For usage of variables you need to put the variables in a Pimatic VariablesDevice.
+If you add a device thats is not a switch, motion sensor, light or contact, a SensorDevice will be created for every attribute of that device.
+If you want to use a specific set of variables, from for example different devices. You need to use a VariablesDevice. Add to the VariablesDevice the desired variables and add the VariableDevice (id) to the Hass device config.
 
 ### Adding Pimatic devices in the Hass Gui
 In Home Assistant the automatic created Pimatic devices can be added as a card via the 'configure UI' option.
 Via the add button (+) you can select a device type and search on device name.
-The Hass device name is \<hass device type\>.\<pimatic-id\> and can when searching to add a device, also be found under the friendly name \<pimatic-id\>. 
+
+The Hass device name is:
+```
+<hass device class>_<pimatic device_prefix>_<pimatic device-id>[_<pimatic attribute-id>]
+```
+The "pimatic attribute-id" is used for variables, button and sensor devices
+
+The related Hass device friendly name is (shows on the HAss gui)
+```
+<pimatic device_prefix: <pimatic device-id> [.<pimatic attribute-id>]
+```
 
 For example adding a pimatic presence sensor with id **presence-livingroom**. In Home Assistant the device gets the following name **binary_sensor.presence-livingroom** or **presence-livingroom** (in the add device search).
 
