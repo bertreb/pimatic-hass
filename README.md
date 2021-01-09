@@ -39,10 +39,27 @@ In the field "discovery_prefix" add the same name you used in the mqtt configura
 If you want you can enable the debug option and read in the logfile log message screen extra debug info.
 After succesful installation and configuration of the Hass plugin you can add a Hass device.
 
+### Configuring the Hass plugin
+
+```
+mqttServer: The ip adress of the mqtt server
+mqttUsername: The username for the mqtt server
+mqttPassword: The password for the mqtt server
+mqttPort: The portnumber of the mqtt api
+  default: 1883
+discovery_prefix: The discovery topic for hass
+  default: hass
+device_prefix: A pimatic style prefix for all device to identify them
+  default: pimatic 
+debug: Debug mode. Writes debug messages to the pimatic log, if set to true.
+  default: false
+```
+The discovery_prefix must be the same as used in the Hass configuration.yaml. The device_prefix is used to identify devices in HAss coming from this pimatic system.
+
 ### Configuring the Hass device
 
 In the Hass device you can add Pimatic devices by there pimatic-id. No further configuration is needed.
-After saving the device config, the connection to Home Assistant is established and per pimatic device that you added in the device config a compatible Hass device is created in Home Assistant. For the VariablesDevices a Hass device is created per variable!
+After saving the device config, the the configuration is updated towards Home Assistant and per pimatic device that you added in the device config a compatible Hass device is created in Home Assistant.
 
 The device type of a Pimatic device determines the Home assistant Device type that is created in Home Assistant device.
 
@@ -72,10 +89,14 @@ The "pimatic attribute-id" is used for variables, button and sensor devices
 
 The related Hass device friendly name is: (shows on the HAss gui)
 ```
-<pimatic device_prefix: <pimatic device-id> [.<pimatic attribute-id>]
+<pimatic device_prefix>: <pimatic device-id> [.<pimatic attribute-id>]
 ```
 
-For the VariablesDevice or the SensorDevice the Hass Device is "sensor.\<Pimatic VariableDevice id\>\_\<Pimatic variable name\>". In the Hass Gui you can group sensors and variables on 1 card.
+For the VariablesDevice or the SensorDevice the Hass device is 
+```
+sensor.<pimatic device_prefix>_<pimatic device-id>_<pimatic attribute/variable-id>
+```
+In the Hass Gui you can group sensors and variables on 1 card.
 
 When you remove a Pimatic device from the config, in Home Assistant the card will get yellow and show the message 'entity not available'. You need to remove the card if you want to get rid of this message. If you leave the card in the Gui the entity becomes active again when you add the same Pimatic device again to the config.
 
