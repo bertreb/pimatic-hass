@@ -190,6 +190,7 @@ module.exports = (env) =>
         env.logger.debug "Device changed: " + device.config.id
         unless device.config.id is @id #This Hass device is changed via recreation
           # one of the used device can be changed
+          
           if @adapters[device.config.id]?
             _device = device
             env.logger.debug "One of the used devices changed: " + _device.config.id

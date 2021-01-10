@@ -40,3 +40,5 @@
 	* fix device delete handling
 * 20210110, v.0.2.20
 	* update topic handler
+* 20210110, v.0.2.21
+	* some edits

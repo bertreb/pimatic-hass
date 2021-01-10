@@ -85,15 +85,12 @@ module.exports = (env) ->
         ).catch((err) =>
         )
 
-    ###
     destroy: ->
       return new Promise((resolve,reject) =>
         for i,_attribute of @hassDevices
           @hassDevices[i].destroy()
         resolve()
       )
-    ###
-
 
   class attributeManager extends events.EventEmitter
 
@@ -205,7 +202,7 @@ module.exports = (env) ->
 
     destroy: ->
       return new Promise((resolve,reject) =>
-        @device.removeListener @_attributeName, @[@_handlerName]
+        @device.removeListener @_attributeName, @[@_handlerName] 
         #@clearDiscovery()
         resolve()
       )
