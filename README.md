@@ -83,7 +83,7 @@ Via the add button (+) you can select a device type and search on device name.
 
 The Hass device name is:
 ```
-<hass device class>_<pimatic device_prefix>_<pimatic device-id>[_<pimatic attribute-id>]
+<hass device class>.<pimatic device_prefix>_<pimatic device-id>[_<pimatic attribute-id>]
 ```
 The "pimatic attribute-id" is used for variables, button and sensor devices
 
@@ -92,7 +92,7 @@ The related Hass device friendly name is: (shows on the HAss gui)
 <pimatic device_prefix>: <pimatic device-id> [.<pimatic attribute-id>]
 ```
 
-For the VariablesDevice or the SensorDevice the Hass device is 
+For the VariablesDevice or the SensorDevice the Hass device is
 ```
 sensor.<pimatic device_prefix>_<pimatic device-id>_<pimatic attribute/variable-id>
 ```
