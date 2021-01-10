@@ -42,3 +42,5 @@
 	* update topic handler
 * 20210110, v.0.2.21
 	* some edits
+* 20210110, v.0.2.22
+	* back to qos 0

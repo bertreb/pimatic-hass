@@ -168,7 +168,7 @@ module.exports = (env) ->
         env.logger.debug "Publish discover _config: " + JSON.stringify(_configVar)
         _options =
           qos : 1
-        @client.publish(_topic, JSON.stringify(_configVar), _options,  (err) =>
+        @client.publish(_topic, JSON.stringify(_configVar), (err) =>
           if err
             env.logger.error "Error publishing Discovery Variable  " + err
             reject()
@@ -187,7 +187,7 @@ module.exports = (env) ->
             env.logger.debug "_stateTopic: " + _topic + ",  payload: " +  JSON.stringify(_payload)
             _options =
               qos : 1
-            @client.publish(_topic, JSON.stringify(_payload), _options, (err) =>
+            @client.publish(_topic, JSON.stringify(_payload), (err) =>
               if err
                 env.logger.error "Error publishing state Variable  " + err
                 reject()

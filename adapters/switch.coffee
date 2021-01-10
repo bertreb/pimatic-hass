@@ -65,7 +65,7 @@ module.exports = (env) ->
         env.logger.debug "Publish discover _config: " + JSON.stringify(_config)
         _options =
           qos : 1
-        @client.publish(_topic, JSON.stringify(_config), _options, (err) =>
+        @client.publish(_topic, JSON.stringify(_config), (err) =>
           if err
             env.logger.error "Error publishing Discovery " + err
             reject()
@@ -79,7 +79,7 @@ module.exports = (env) ->
       _options =
         qos : 0
       env.logger.debug "Publish state: " + _topic + ", _state: " + _state
-      @client.publish(_topic, String _state, _options)
+      @client.publish(_topic, String _state) #, _options)
 
 
     update: () ->

@@ -96,7 +96,7 @@ module.exports = (env) ->
           env.logger.debug "Publish contact: " + _topic + ", _state: " + _state
           _options =
             qos : 1
-          @client.publish(_topic, String _state, _options)
+          @client.publish(_topic, String _state)
         )
       if @hasPresenceSensor
         @device.getPresence()
@@ -106,7 +106,7 @@ module.exports = (env) ->
           env.logger.debug "Publish presence: " + _topic2 + ", _state: " + _state
           _options =
             qos : 1
-          @client.publish(_topic2, String _state, _options)
+          @client.publish(_topic2, String _state)
         )
 
     update: () ->
