@@ -14,6 +14,7 @@ module.exports = (env) ->
       #@pimaticId = pimaticId
       @discoveryId = discovery_prefix
       @hassDeviceId = device_prefix + "_" + device.id
+      @device_prefix = device_prefix
       @hassDeviceFriendlyName = device_prefix + ": " + device.id
 
       @device.getState()
@@ -76,7 +77,7 @@ module.exports = (env) ->
       if @_state then _state = "ON" else _state = "OFF"
       _topic = @discoveryId + '/' + @hassDeviceId
       _options =
-        qos : 1
+        qos : 0
       env.logger.debug "Publish state: " + _topic + ", _state: " + _state
       @client.publish(_topic, String _state, _options)
 
@@ -97,6 +98,6 @@ module.exports = (env) ->
 
     destroy: ->
       return new Promise((resolve,reject) =>
-        @device.removeListener 'state', @stateHandler
+        @device.removeListener 'state', @stateHandler if @stateHandler?
         resolve()
       )

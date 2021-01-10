@@ -38,3 +38,5 @@
 	* introduced friendly name
 * 20210109, v.0.2.19
 	* fix device delete handling
+* 20210110, v.0.2.20
+	* update topic handler

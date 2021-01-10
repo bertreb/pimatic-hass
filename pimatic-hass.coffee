@@ -85,7 +85,7 @@ module.exports = (env) =>
         @client = new mqtt.connect(@mqttOptions)
         env.logger.debug "Connecting to MQTT server..."
 
-        @client.on 'connect', () =>
+        @client.on 'connect', @clientConnectHandler = () =>
           env.logger.debug "Successfully connected to MQTT server"
 
           @client.subscribe @discovery_prefix + "/#" , (err, granted) =>
@@ -144,8 +144,8 @@ module.exports = (env) =>
               else
                 env.logger.debug "Device '#{_deviceId}' does not exist " + err
 
-        @client.on 'message', (topic, message, packet) =>
-          #env.logger.debug "message received with topic: " + (topic)
+        @client.on  'message', @clientMessageHandler = (topic, message, packet) =>
+          env.logger.debug "message received with topic: " + (topic)
           if topic.startsWith(@discovery_prefix + "/status")
             if (String packet.payload).indexOf("offline") >= 0
               env.logger.info "Hass offline"
@@ -166,20 +166,15 @@ module.exports = (env) =>
               @adapters[_adapterId].handleMessage(packet)
 
 
-        @client.on 'pingreq', () =>
-          env.logger.debug "Ping request, answering with pingresp"
-          # send a pingresp
-          @client.pingresp()
-
         # connection error handling
-        @client.on 'close', () => 
+        @client.on 'close', @clientEndHandler = () => 
           @_setPresence(false)
 
-        @client.on 'error', (err) => 
+        @client.on 'error', @clientErrorHandler = (err) => 
           env.logger.error "error: " + err
           @_setPresence(false)
 
-        @client.on 'disconnect', () => 
+        @client.on 'disconnect', @clientDisconnectHandler = () => 
           env.logger.info "Client disconnect"
           @_setPresence(false)
 
@@ -291,23 +286,42 @@ module.exports = (env) =>
       )
 
     getAdapterId: (topic) =>
+      # topic is in format <@discovery_prefix>/<device prefix>_<device id>/...
       try
+        unless topic.endsWith('/set')
+          #env.logger.debug "Topic doesnt end with /set => no command, discard "
+          return null
         _items = topic.split('/')
-        if _items[0] isnt @discovery_prefix
+        unless _items[0] is @discovery_prefix
           env.logger.debug "#{@discovery_prefix} not found " + _items[0]
           return null
-        _adapter = _.find(@adapters, (a)=> topic.indexOf(a.id)>= 0)
-        if _adapter?
-          return _adapter.id
+        _device_prefix = _items[1].split("_")[0]
+        _deviceId = _items[1].split("_")[1] #.split("_").join("-")
+        if _deviceId?
+          env.logger.debug "Look for adapter for device: " + _deviceId
+          _adapter = _.find(@adapters, (a)=> _deviceId.indexOf(a.id)>= 0)
+          if _adapter?
+            env.logger.debug "Adapter found for device: " + _deviceId
+            return _adapter.id
+          else
+            #env.logger.debug "Adapter for topic #{topic} not found"
+            return null
         else
           #env.logger.debug "Adapter for topic #{topic} not found"
           return null
       catch err
+        env.logger.error "Error getting adapter " + err
         return null
 
     destroy: () =>
-      @framework.removeListener "deviceChanged", @deviceChangedListener if @deviceChangedListener?
-      @framework.removeListener "deviceRemoved", @deviceRemovedListener if @deviceRemovedListener?
+      @framework.removeListener "deviceChanged", @deviceChangedListener
+      @framework.removeListener "deviceRemoved", @deviceRemovedListener
+      @client.removeListener 'connect', @clientConnectHandler
+      @client.removeListener 'disconnect', @clientDisconnectHandler
+      @client.removeListener 'message', @clientMessageHandler
+      @client.removeListener 'error', @clientErrorHandler
+      @client.removeListener 'end', @clientEndHandler
+
       super()
 
   return new HassPlugin
