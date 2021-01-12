@@ -24,7 +24,8 @@ mqtt:
     topic: 'hass/status'
     payload: 'offline'
 ```
-It's important to use in Hass the same discovery_prefix you are using in the Pimatic plugin. Otherwise the automatic installation of devices will not work.
+It's important to use in Hass the same discovery_prefix you are using in the Pimatic plugin. Otherwise the automatic installation of devices will not work. The discover_topic and the first part of the birth_message/will-message topic must be the same. Default 'hass' is used.
+If you change the discovery_prefix in the plugin config, you must also change these 3 values in home-assistant's configuratio.yaml.
 
 Now you can add the MQTT integration in Home Assistant.
 Goto to the settings menu and select integrations. Pusg the add button (+) and type mqtt.
@@ -72,7 +73,9 @@ Currently the following types of Pimatic devices are supported.
 |Light    | 2-way   | Light    | light on/off, brightness
 |Contact  | 1-way   | Binary   | opened/closed
 |Sensor | 1-way   | Value   | all attributes
-|Variables| 1-way	| Variable | variable value
+|Variables| 1-way | Variable | variable value
+|Thermostat| 2-way | Thermostat | off,heat,auto, setpoint, temperature
+
 
 If you add a device thats is not a switch, motion sensor, light or contact, a SensorDevice will be created for every attribute of that device.
 If you want to use a specific set of variables, from for example different devices. You need to use a VariablesDevice. Add to the VariablesDevice the desired variables and add the VariableDevice (id) to the Hass device config.
