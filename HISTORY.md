@@ -50,3 +50,6 @@
 	* support for DummyHeatingTHermostat and DummyThermostat
 * 20210112, v.0.2.25
 	* support TadoThermostat
+* 20210112, v.0.2.26
+	* add buttons to package
+	* change behavior in "enableActiveButton" to push button
