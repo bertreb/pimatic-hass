@@ -60,6 +60,10 @@ module.exports = (env) ->
           unique_id: @hassDeviceId
           cmd_t: @discoveryId + '/' + @hassDeviceId + '/set'
           stat_t: @discoveryId + '/' + @hassDeviceId
+          #availability_topic: @discoveryId + '/' + @hassDeviceId + '/status'
+          #payload_available: "1"
+          #payload_not_available: "0"
+
         _topic = @discoveryId + '/switch/' + @hassDeviceId + '/config'
         env.logger.debug "Publish discover _topic: " + _topic 
         env.logger.debug "Publish discover _config: " + JSON.stringify(_config)
@@ -83,7 +87,8 @@ module.exports = (env) ->
 
 
     update: () ->
-      env.logger.debug "Update not implemented"
+      env.logger.debug "Update switch not implemented"
+
 
     clearAndDestroy: () =>
       return new Promise((resolve,reject) =>
@@ -93,7 +98,7 @@ module.exports = (env) ->
         .then ()=>
           resolve()
         .catch (err) =>
-          env.logger.debug "Error clear and destroy "
+          env.logger.debug "Error clear and destroy Switch"
       )
 
     destroy: ->

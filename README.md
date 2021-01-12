@@ -74,7 +74,7 @@ Currently the following types of Pimatic devices are supported.
 |Contact  | 1-way   | Binary   | opened/closed
 |Sensor | 1-way   | Value   | all attributes
 |Variables| 1-way | Variable | variable value
-|Thermostat| 2-way | Thermostat | off,heat,auto, setpoint, temperature
+|Thermostat| 2-way | Thermostat | off/heat/auto, setpoint, temperature
 
 
 If you add a device thats is not a switch, motion sensor, light or contact, a SensorDevice will be created for every attribute of that device.

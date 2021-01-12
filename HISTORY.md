@@ -44,3 +44,5 @@
 	* some edits
 * 20210110, v.0.2.22
 	* back to qos 0
+* 20210112, v.0.2.23
+	* added thermostat

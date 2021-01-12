@@ -36,9 +36,9 @@ module.exports = (env) =>
       if @_destroyed then return
 
       #@framework.on 'destroy', () =>
-      #  @destroy()
-      #  #for i, _adapter of @adapters
-      #  #  _adapter.setAvailability(off)        
+      #  for i, _adapter of @adapters
+      #    if @adapters[i].setStatus?
+      #      @adapters[i].setStatus(off)        
 
       # not possible, HassDevice need for this to be the last device in config.
       #for _d in @config.devices
@@ -145,7 +145,7 @@ module.exports = (env) =>
                 env.logger.debug "Device '#{_deviceId}' does not exist " + err
 
         @client.on  'message', @clientMessageHandler = (topic, message, packet) =>
-          env.logger.debug "message received with topic: " + (topic)
+          #env.logger.debug "message received with topic: " + (topic)
           if topic.startsWith(@discovery_prefix + "/status")
             if (String packet.payload).indexOf("offline") >= 0
               env.logger.info "Hass offline"
