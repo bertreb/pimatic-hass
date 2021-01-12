@@ -85,6 +85,30 @@ module.exports = (env) ->
           set: null
           eventName: "temperatureRoom"
 
+      @thermostats["TadoThermostat"] =
+        modes: ["off","heat","auto"]
+        mode: null
+        program:
+          get: "getProgram"
+          set: "changeProgramTo"
+          eventName: "program"
+          manual: "manual"
+          auto: "auto"
+        power:
+          get: "getPower"
+          set: "changePowerTo"
+          eventName: "power"
+          on: true
+          off: false
+        setpoint:
+          get: "getTemperatureSetpoint"
+          set: "changeTemperatureTo"
+          eventName: "temperatureSetpoint"
+        temperature:
+          get: "getTemperatureRoom"
+          set: null
+          eventName: "temperatureRoom"
+
       if @thermostats[@device.config.class]?
         @thermostat = @thermostats[@device.config.class]
       else 

@@ -48,3 +48,5 @@
 	* added thermostat
 * 20210112, v.0.2.24
 	* support for DummyHeatingTHermostat and DummyThermostat
+* 20210112, v.0.2.25
+	* support TadoThermostat
