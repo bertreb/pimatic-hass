@@ -46,3 +46,5 @@
 	* back to qos 0
 * 20210112, v.0.2.23
 	* added thermostat
+* 20210112, v.0.2.24
+	* support for DummyHeatingTHermostat and DummyThermostat

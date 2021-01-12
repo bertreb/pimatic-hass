@@ -80,6 +80,8 @@ Currently the following types of Pimatic devices are supported.
 If you add a device thats is not a switch, motion sensor, light or contact, a SensorDevice will be created for every attribute of that device.
 If you want to use a specific set of variables, from for example different devices. You need to use a VariablesDevice. Add to the VariablesDevice the desired variables and add the VariableDevice (id) to the Hass device config.
 
+Tee supported Thermostats are DummyHeatingThermostat (pimatic default) and DummyThermostat (pimatic-dummies)
+
 ### Adding Pimatic devices in the Hass Gui
 In Home Assistant the automatic created Pimatic devices can be added as a card via the 'configure UI' option.
 Via the add button (+) you can select a device type and search on device name.
