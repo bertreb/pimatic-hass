@@ -60,6 +60,10 @@ module.exports = (env) ->
             unique_id: @hassDeviceId
             stat_t: @discoveryId + '/binary_sensor/' + @hassDeviceId + 'C/state'
             device_class: "opening"
+            availability_topic: @discoveryId + '/' + @hassDeviceId + '/status'
+            payload_available: "online"
+            payload_not_available: "offline"
+  
           _topic = @discoveryId + '/binary_sensor/' + @hassDeviceId + 'C/config'
           env.logger.debug "Publish discover _topic: " + _topic 
           env.logger.debug "Publish discover _configContact: " + JSON.stringify(_configC)
@@ -127,6 +131,14 @@ module.exports = (env) ->
       @clearDiscovery()
       .then () =>
         @destroy()
+
+    setStatus: (online) =>
+      if online then _status = "online" else _status = "offline"
+      _topic = @discoveryId + '/' + @hassDeviceId + "/status"
+      _options =
+        qos : 0
+      env.logger.debug "Publish status: " + _topic + ", _status: " + _status
+      @client.publish(_topic, String _status) #, _options)
 
     destroy: ->
       return new Promise((resolve,reject) =>

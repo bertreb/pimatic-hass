@@ -62,8 +62,9 @@ module.exports = (env) ->
           get: "getMode"
           set: "changeModeTo"
           eventName: "mode"
-          heat: "manual"
-          auto: "auto"
+          heat: "heat"
+          auto: "heat"
+          off: "heat"
         program:
           get: "getProgram"
           set: "changeProgramTo"
@@ -145,10 +146,10 @@ module.exports = (env) ->
           switch program
             when "auto"
               @state.program = "auto"
-              @state.mode = "auto"
+              #@state.mode = "auto"
             else
               @state.program = "manual"
-              @state.mode = "heat"
+              #@state.mode = "heat"
         if @modeFunction
           @device.on @modeEventName, modeHandler if @modeEventName?
           return @device[@thermostat.mode.get]() #.getMode()
@@ -159,7 +160,8 @@ module.exports = (env) ->
           switch mode 
             when "heat"
               @state.mode = "heat"
-              @state.program = "manual"              
+            else
+              @state.mode = mode            
         if @temperatureSensor
           @device.on @temperatureEventName, temperatureHandler if @temperatureEventName?
           return @device[@thermostat.temperature.get]() #.getTemperatureRoom()
@@ -177,7 +179,7 @@ module.exports = (env) ->
         if power?
           @state.power = power
       .finally ()=>
-        env.logger.debug "State: " + JSON.stringify(@state,null,2)
+        env.logger.debug "#{@id} State: " + JSON.stringify(@state,null,2)
       .catch (err)=>
         env.logger.debug "Error init thermostat " + err
 
@@ -205,20 +207,20 @@ module.exports = (env) ->
 
     updateMode: (newMode) =>
       unless newMode is @state.program
-        env.logger.debug "Update thermostat mode to " + newMode
+        env.logger.debug "Update '#{@id}' thermostat mode to " + newMode
         @state.mode = newMode
         @publishState()
 
     updatePower: (newPower) =>
       #unless newPower is @state.power
-      env.logger.debug "Update thermostat power to " + newPower
+      env.logger.debug "Update '#{@id}' thermostat power to " + newPower
       @state.power = newPower
       @publishState()
 
     updateProgram: (newProgram) =>
       #unless newMode is @state.thermostatMode
       if @programFunction
-        env.logger.debug "Update thermostat program to " + newProgram
+        env.logger.debug "Update '#{@id}' thermostat program to " + newProgram
         switch newProgram
           when "auto"
             @state.program = "auto"
@@ -229,7 +231,7 @@ module.exports = (env) ->
 
     updateSetpoint: (newSetpoint) =>
       unless newSetpoint is @state.temperatureSetpoint
-        env.logger.debug "Update setpoint to " + newSetpoint
+        env.logger.debug "Update '#{@id}' setpoint to " + newSetpoint
         @state.temperatureSetpoint = newSetpoint
         @device[@thermostat.power.set](@thermostat.power.on) if @powerFunction
         @device[@thermostat.program.set](@thermostat.program.manual) if @programFunction
@@ -238,7 +240,7 @@ module.exports = (env) ->
 
     updateTemperature: (newTemperature) =>
       #unless newTemperature is @state.temperatureAmbient
-      env.logger.debug "Update ambiant temperature to " + newTemperature
+      env.logger.debug "Update #{@id} ambiant temperature to " + newTemperature
       @state.temperatureAmbient = newTemperature
       @publishState()
 
@@ -303,6 +305,9 @@ module.exports = (env) ->
           min_temp: "15"
           max_temp: "25"
           temp_step: "0.5"
+          availability_topic: @discoveryId + '/' + @hassDeviceId + '/status'
+          payload_available: "online"
+          payload_not_available: "offline"
     
         _topic = @discoveryId + '/climate/' + @hassDeviceId + '/config'
         env.logger.debug "Publish discover _topic: " + _topic 
@@ -363,6 +368,14 @@ module.exports = (env) ->
         .catch (err) =>
           env.logger.debug "Error clear and destroy Thermostat"
       )
+
+    setStatus: (online) =>
+      if online then _status = "online" else _status = "offline"
+      _topic = @discoveryId + '/' + @hassDeviceId + "/status"
+      _options =
+        qos : 0
+      env.logger.debug "Publish status: " + _topic + ", _status: " + _status
+      @client.publish(_topic, String _status) #, _options)
 
     destroy: ->
       return new Promise((resolve,reject) =>

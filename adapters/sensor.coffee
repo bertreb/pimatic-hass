@@ -21,14 +21,14 @@ module.exports = (env) ->
         @hassDevices[_a] = new attributeManager(@device, _a, @client, @discovery_prefix, device_prefix)
 
     publishState: () =>
-      for i, _attribute of @hassDevices
+      for i, _sensor of @hassDevices
         @hassDevices[i].publishState()
 
     publishDiscovery: () =>
       return new Promise((resolve,reject) =>
         publishDiscoveries = []
-        for i, _attribute of @hassDevices
-          publishDiscoveries.push _attribute.publishDiscovery()
+        for i, _sensor of @hassDevices
+          publishDiscoveries.push _sensor.publishDiscovery()
           Promise.all(publishDiscoveries)
           .then ()=>
             resolve @id
@@ -38,7 +38,7 @@ module.exports = (env) ->
       return new Promise((resolve,reject) =>
         clears =[]
         destroys =[]
-        for i, button of @hassDevices
+        for i, sensor of @hassDevices
           clears.push @hassDevices[i].clearDiscovery()
           destroys.push @hassDevices[i].destroy()
         Promise.all(clears)
@@ -51,11 +51,11 @@ module.exports = (env) ->
       )
     
     clearDiscovery: () =>
-      for i, _attribute of @hassDevices
+      for i, _sensor of @hassDevices
         @hassDevices[i].clearDiscovery()
 
     handleMessage: (packet) =>
-      for i, _attribute of @hassDevices
+      for i, _sensor of @hassDevices
         @hassDevices[i].handleMessage(packet)
 
     update: (deviceNew) =>
@@ -85,9 +85,13 @@ module.exports = (env) ->
         ).catch((err) =>
         )
 
+    setStatus: (online) =>
+      for i, _sensor of @hassDevices
+        @hassDevices[i].setStatus(online)
+
     destroy: ->
       return new Promise((resolve,reject) =>
-        for i,_attribute of @hassDevices
+        for i, _sensor of @hassDevices
           @hassDevices[i].destroy()
         resolve()
       )
@@ -161,6 +165,9 @@ module.exports = (env) ->
           state_topic: @discoveryId + '/sensor/' + @hassDeviceId + "/state"
           unit_of_measurement: @unit
           value_template: "{{ value_json.variable}}"
+          availability_topic: @discoveryId + '/' + @hassDeviceId + '/status'
+          payload_available: "online"
+          payload_not_available: "offline"
         _deviceClass = @getDeviceClass(@unit)
         if _deviceClass?
           _configVar["device_class"] = _deviceClass
@@ -199,6 +206,14 @@ module.exports = (env) ->
         catch err
           env.logger.debug "handled error in @_getVar: " + @_getVar + ", err: " + JSON.stringify(err,null,2) 
       )
+
+    setStatus: (online) =>
+      if online then _status = "online" else _status = "offline"
+      _topic = @discoveryId + '/' + @hassDeviceId + "/status"
+      _options =
+        qos : 0
+      env.logger.debug "Publish status: " + _topic + ", _status: " + _status
+      @client.publish(_topic, String _status) #, _options)
 
     destroy: ->
       return new Promise((resolve,reject) =>

@@ -128,6 +128,9 @@ module.exports = (env) ->
           schema: "json"
           brightness: true
           rgb: true
+          availability_topic: @discoveryId + '/' + @hassDeviceId + '/status'
+          payload_available: "online"
+          payload_not_available: "offline"
           #brightness_state_topic: @discoveryId + '/' + @device.id + '/brightness'
           #brightness_command_topic: @discoveryId + '/' + @device.id + '/brightness/set'
           #rgb_state_topic: @discoveryId + '/' + @device.id + '/rgb'
@@ -228,6 +231,14 @@ module.exports = (env) ->
         .catch (err) =>
           env.logger.debug "Error clear and destroy "
       )
+
+    setStatus: (online) =>
+      if online then _status = "online" else _status = "offline"
+      _topic = @discoveryId + '/' + @hassDeviceId + "/status"
+      _options =
+        qos : 0
+      env.logger.debug "Publish status: " + _topic + ", _status: " + _status
+      @client.publish(_topic, String _status) #, _options)
 
     destroy: ->
       return new Promise((resolve,reject) =>

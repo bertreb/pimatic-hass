@@ -84,6 +84,10 @@ module.exports = (env) ->
         ).catch((err) =>
         )
 
+    setStatus: (online) =>
+      for i, _variable of @hassDevices
+        @hassDevices[i].setStatus(online)
+
     destroy: ->
       return new Promise((resolve,reject) =>
         for i,variable of @hassDevices
@@ -160,6 +164,9 @@ module.exports = (env) ->
           state_topic: @discoveryId + '/sensor/' + @hassDeviceId + "/state"
           unit_of_measurement: @unit
           value_template: "{{ value_json.variable}}"
+          availability_topic: @discoveryId + '/' + @hassDeviceId + '/status'
+          payload_available: "online"
+          payload_not_available: "offline"
         _deviceClass = @getDeviceClass()
         if _deviceClass?
           _configVar["device_class"] = _deviceClass
@@ -198,6 +205,14 @@ module.exports = (env) ->
         catch err
           env.logger.debug "handled error in @_getVar: " + @_getVar + ", err: " + JSON.stringify(err,null,2) 
       )
+
+    setStatus: (online) =>
+      if online then _status = "online" else _status = "offline"
+      _topic = @discoveryId + '/' + @hassDeviceId + "/status"
+      _options =
+        qos : 0
+      env.logger.debug "Publish status: " + _topic + ", _status: " + _status
+      @client.publish(_topic, String _status) #, _options)
 
     destroy: ->
       return new Promise((resolve,reject) =>

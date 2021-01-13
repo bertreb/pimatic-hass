@@ -53,3 +53,5 @@
 * 20210112, v.0.2.26
 	* add buttons to package
 	* change behavior in "enableActiveButton" to push button
+* 20210113, v.0.2.27
+	* added availablity status

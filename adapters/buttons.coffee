@@ -130,6 +130,10 @@ module.exports = (env) ->
         ).catch((err) =>
         )
 
+    setStatus: (online) =>
+      for i, _button of @hassDevices
+        @hassDevices[i].setStatus(online)
+
     destroy: ->
       return new Promise((resolve,reject) =>
         clearTimeout(@autoStateTimer) if @autoStateTimer?
@@ -194,6 +198,9 @@ module.exports = (env) ->
           unique_id : @hassDeviceId
           cmd_t: @discoveryId + '/' + @hassDeviceId + '/set'
           stat_t: @discoveryId + '/' + @hassDeviceId
+          availability_topic: @discoveryId + '/' + @hassDeviceId + '/status'
+          payload_available: "online"
+          payload_not_available: "offline"
         _topic = @discoveryId + '/switch/' + @hassDeviceId + '/config'
         env.logger.debug "Publish discover _topic: " + _topic 
         env.logger.debug "Publish discover _config: " + JSON.stringify(_config)
@@ -266,6 +273,13 @@ module.exports = (env) ->
         )
       )
 
+    setStatus: (online) =>
+      if online then _status = "online" else _status = "offline"
+      _topic = @discoveryId + '/' + @hassDeviceId + "/status"
+      _options =
+        qos : 0
+      env.logger.debug "Publish status: " + _topic + ", _status: " + _status
+      @client.publish(_topic, String _status) #, _options)
 
     destroy: ->
       #@device.removeListener @_variableName, @buttonHandler
