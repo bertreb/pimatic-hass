@@ -55,3 +55,5 @@
 	* change behavior in "enableActiveButton" to push button
 * 20210113, v.0.2.27
 	* added availablity status
+* 20210113, v.0.2.28
+	* fix availablity status

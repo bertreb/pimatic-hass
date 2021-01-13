@@ -178,6 +178,7 @@ module.exports = (env) ->
       .then (power)=>
         if power?
           @state.power = power
+        return
       .finally ()=>
         env.logger.debug "#{@id} State: " + JSON.stringify(@state,null,2)
       .catch (err)=>

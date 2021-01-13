@@ -112,7 +112,6 @@ module.exports = (env) =>
             else
               @_setPresence(false)
             
-
             env.logger.debug "addHassDevices: " + JSON.stringify(addHassDevices,null,2)
             env.logger.debug "removeHassDevices: " + JSON.stringify(removeHassDevices,null,2)
             for _deviceId in removeHassDevices
@@ -126,6 +125,9 @@ module.exports = (env) =>
               else
                 env.logger.debug "Adapter does not exist: " + _deviceId
 
+            for i, _adapter of @adapters
+              if @adapters[i].setStatus?
+                @adapters[i].setStatus(on)        
 
             for _deviceId in addHassDevices
               _device = @framework.deviceManager.getDeviceById(_deviceId)
@@ -137,16 +139,13 @@ module.exports = (env) =>
                     return @adapters[_device.id].publishDiscovery()
                   .then (_i)=>
                     setTimeout(()=>
+                      @adapters[_i].setStatus(on)        
                       @adapters[_i].publishState()
                     , 5000)
                   .catch (err) =>
                     env.logger.debug "Device '#{_deviceId}' can't be added " + err
               else
                 env.logger.debug "Device '#{_deviceId}' does not exist " + err
-
-            for i, _adapter of @adapters
-              if @adapters[i].setStatus?
-                @adapters[i].setStatus(on)        
 
 
         @client.on  'message', @clientMessageHandler = (topic, message, packet) =>
@@ -158,11 +157,12 @@ module.exports = (env) =>
             if (String packet.payload).indexOf("online") >= 0 
               env.logger.info "Hass online"
               @_setPresence(true)
-              env.logger.debug "ReDiscover and Publish devices to Hass"
-              for i,_adapter of @adapters
+              env.logger.debug "Republish, set status On and publish devices to Hass"
+              for i, _adapter of @adapters
                 @adapters[i].publishDiscovery()
                 .then (_i)=>
                   setTimeout(()=>
+                    @adapters[_i].setStatus(on)        
                     @adapters[_i].publishState()
                   , 5000)
           else
