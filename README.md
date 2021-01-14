@@ -85,7 +85,7 @@ If you want to use a specific set of variables, from for example different devic
 The supported Thermostats are DummyHeatingThermostat (pimatic default) and DummyThermostat (pimatic-dummies).
 For the Shutter a DummyShutter device can be used.
 
-For the Alarmpanel a specific DummyAlarmPanel device is created in pimatic-dummies. With this device you can create an Alarm Panel in home-assistant. For more informatie see [pimatic-dummiess](https://github.com/bertreb/pimatic-dummies).
+For the Alarmpanel a specific DummyAlarmPanel device is created in pimatic-dummies. With this device you can create an Alarm Panel in home-assistant. For more informatie see [pimatic-dummies](https://github.com/bertreb/pimatic-dummies).
 
 ### Adding Pimatic devices in the Hass Gui
 In Home Assistant the automatic created Pimatic devices can be added as a card via the 'configure UI' option.
