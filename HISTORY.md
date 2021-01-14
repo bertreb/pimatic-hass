@@ -57,3 +57,5 @@
 	* added availablity status
 * 20210113, v.0.2.28
 	* fix availablity status
+* 20210114, v.0.2.29
+	* added support for Shutter and AlarmPanel

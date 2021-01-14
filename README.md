@@ -75,12 +75,17 @@ Currently the following types of Pimatic devices are supported.
 |Sensor | 1-way   | Value   | all attributes
 |Variables| 1-way | Variable | variable value
 |Thermostat| 2-way | Thermostat | off/heat/auto, setpoint, temperature
+|Shutter| 2-way | Cover | up / down /stop
+|Alarmpanel| 2-way | Alarmpanel | disarm, arm (home, away or night)
 
 
 If you add a device thats is not a switch, motion sensor, light or contact, a SensorDevice will be created for every attribute of that device.
 If you want to use a specific set of variables, from for example different devices. You need to use a VariablesDevice. Add to the VariablesDevice the desired variables and add the VariableDevice (id) to the Hass device config.
 
-Tee supported Thermostats are DummyHeatingThermostat (pimatic default) and DummyThermostat (pimatic-dummies)
+The supported Thermostats are DummyHeatingThermostat (pimatic default) and DummyThermostat (pimatic-dummies).
+For the Shutter a DummyShutter device can be used.
+
+For the Alarmpanel a specific DummyAlarmPanel device is created in pimatic-dummies. With this device you can create an Alarm Panel in home-assistant. For more informatie see [pimatic-dummiess](https://github.com/bertreb/pimatic-dummies).
 
 ### Adding Pimatic devices in the Hass Gui
 In Home Assistant the automatic created Pimatic devices can be added as a card via the 'configure UI' option.

@@ -3,12 +3,13 @@ module.exports = (env) =>
   mqtt = require('mqtt')
   _ = require("lodash")
   switchAdapter = require('./adapters/switch')(env)
+  alarmAdapter = require('./adapters/alarm')(env)
   buttonsAdapter = require('./adapters/buttons')(env)
   lightAdapter = require('./adapters/light')(env)
   #rgblightAdapter = require('./adapters/rgblight')(env)
   sensorAdapter = require('./adapters/sensor')(env)
   binarySensorAdapter = require('./adapters/binarysensor')(env)
-  #shutterAdapter = require('./adapters/shutter')(env)
+  coverAdapter = require('./adapters/cover')(env)
   variablesAdapter = require('./adapters/variables')(env)
   #attributesAdapter = require('./adapters/attributes')(env)
   heatingThermostatAdapter = require('./adapters/thermostat')(env)
@@ -225,7 +226,11 @@ module.exports = (env) =>
         #  resolve(_newAdapter)
         #env.logger.debug "_.size(device.attributes)>0 " + _.size(device.attributes)
         #env.logger.debug "Device in _addDevice: " + device.id
-        if device instanceof env.devices.DimmerActuator or (device.hasAttribute("dimlevel") and device.hasAttribute("state"))
+        if device.config.class is "DummyAlarmPanel"
+          _newAdapter = new alarmAdapter(device, @client, @discovery_prefix, @device_prefix)
+          @adapters[device.id] = _newAdapter
+          resolve(_newAdapter)
+        else if device instanceof env.devices.DimmerActuator or (device.hasAttribute("dimlevel") and device.hasAttribute("state"))
           _newAdapter = new lightAdapter(device, @client, @discovery_prefix, @device_prefix)
           @adapters[device.id] = _newAdapter
           resolve(_newAdapter)
@@ -242,16 +247,10 @@ module.exports = (env) =>
           _newAdapter = new heatingThermostatAdapter(device, @client, @discovery_prefix, @device_prefix)
           @adapters[device.id] = _newAdapter
           resolve(_newAdapter)
-          ###
-        else if device instanceof env.devices.Sensor and device.hasAttribute("temperature") and device.hasAttribute("humidity")
-          _newAdapter = new sensorAdapter(device, @client, @discovery_prefix, @device_prefix)
+        else if device.config.class is "DummyShutter"
+          _newAdapter = new coverAdapter(device, @client, @discovery_prefix, @device_prefix)
           @adapters[device.id] = _newAdapter
           resolve(_newAdapter)
-        else if device instanceof env.devices.Sensor and (device.hasAttribute("contact") or device.hasAttribute("presence"))
-          _newAdapter = new binarySensorAdapter(device, @client, @discovery_prefix, @device_prefix)
-          @adapters[device.id] = _newAdapter
-          resolve(_newAdapter)
-          ###
         else if device.config.class is "VariablesDevice"
           _newAdapter = new variablesAdapter(device, @client, @discovery_prefix, @device_prefix)
           @adapters[device.id] = _newAdapter
@@ -260,8 +259,6 @@ module.exports = (env) =>
           _newAdapter = new sensorAdapter(device, @client, @discovery_prefix, @device_prefix)
           @adapters[device.id] = _newAdapter
           resolve(_newAdapter)
-        else if device instanceof env.devices.ShutterController
-          throw new Error "Device type ShutterController not implemented"
         else
           throw new Error "Init: Device type of device #{device.id} does not exist"
         #env.logger.info "Devices: " + JSON.stringify(@adapters,null,2)
