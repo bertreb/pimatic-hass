@@ -196,12 +196,10 @@ module.exports = (env) =>
             _device = device
             env.logger.debug "One of the used devices changed: " + _device.config.id
             @adapters[_device.config.id].destroy()
-            .then ()=>
-              delete @adapters[_device.config.id]
-              env.logger.debug "Adapter deleted for #{_device.id}"
-              return @_addDevice(_device)
-            .then ()=>
-              env.logger.debug "New Adapter added for #{_device.config.id}"
+            delete @adapters[_device.config.id]
+            env.logger.debug "Adapter deleted for #{_device.id}"
+            @_addDevice(_device)
+            env.logger.debug "New Adapter added for #{_device.config.id}"
 
       super()
 

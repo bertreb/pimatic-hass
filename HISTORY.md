@@ -63,5 +63,5 @@
 	* code optimalisation of mqtt handling and restart
 * 20210117, v.0.3.1
 	* update hass online indicator
-* 20210117, v.0.3.2
+* 20210117, v.0.3.3
 	* changed (re)start sequence
