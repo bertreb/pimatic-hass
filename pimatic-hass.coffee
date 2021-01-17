@@ -108,10 +108,7 @@ module.exports = (env) =>
               if !_.find(@config.devices, (deviceC) => deviceC == _deviceId )
                 removeHassDevices.push _deviceId
 
-            if _.size(@config.devices) > 0
-              @_setPresence(true)
-            else
-              @_setPresence(false)
+            @nrOfDevices = _.size(@config.devices)
             
             env.logger.debug "addHassDevices: " + JSON.stringify(addHassDevices,null,2)
             env.logger.debug "removeHassDevices: " + JSON.stringify(removeHassDevices,null,2)
@@ -136,18 +133,12 @@ module.exports = (env) =>
                 do (_device) =>
                   env.logger.debug "Adding device: " + _device.id
                   @_addDevice(_device)
-                  .then () =>
-                    return @adapters[_device.id].publishDiscovery()
-                  .then (_i)=>
-                    setTimeout(()=>
-                      @adapters[_i].setStatus(on)        
-                      @adapters[_i].publishState()
-                    , 5000)
+                  .then (_adapter)=>
+                    env.logger.debug "_adapters added " + _device.id
                   .catch (err) =>
                     env.logger.debug "Device '#{_deviceId}' can't be added " + err
               else
                 env.logger.debug "Device '#{_deviceId}' does not exist " + err
-
 
         @client.on  'message', @clientMessageHandler = (topic, message, packet) =>
           #env.logger.debug "message received with topic: " + (topic)
@@ -159,18 +150,14 @@ module.exports = (env) =>
               env.logger.info "Hass online"
               @_setPresence(true)
               env.logger.debug "Republish, set status On and publish devices to Hass"
-              for i, _adapter of @adapters
-                @adapters[i].publishDiscovery()
-                .then (_i)=>
-                  setTimeout(()=>
-                    @adapters[_i].setStatus(on)        
-                    @adapters[_i].publishState()
-                  , 5000)
+              for _i, _adapter of @adapters
+                @adapters[_i].setStatus(on)
+                @adapters[_i].publishState()
           else
             _adapterId = @getAdapterId(topic)
             if _adapterId?
+              env.logger.debug "Adapter found for topic #{topic}, " +_adapterId
               @adapters[_adapterId].handleMessage(packet)
-
 
         # connection error handling
         @client.on 'close', @clientEndHandler = () => 
@@ -189,14 +176,13 @@ module.exports = (env) =>
         env.logger.debug "@adapters[i].id: " + @adapters[i].id + ", device.id: " + device.id
         if @adapters[i].id is device.id
           @adapters[i].clearAndDestroy()
-          .then ()=>
-            delete @adapters[i]
+          .then (_i)=>
+            delete @adapters[_i]
 
       @framework.on 'deviceChanged', @deviceChangedListener = (device) =>
         env.logger.debug "Device changed: " + device.config.id
         unless device.config.id is @id #This Hass device is changed via recreation
-          # one of the used device can be changed
-          
+          # one of the used device can be changed          
           if @adapters[device.config.id]?
             _device = device
             env.logger.debug "One of the used devices changed: " + _device.config.id
@@ -207,11 +193,6 @@ module.exports = (env) =>
               return @_addDevice(_device)
             .then ()=>
               env.logger.debug "New Adapter added for #{_device.config.id}"
-              @adapters[_device.config.id].publishDiscovery()
-              setTimeout(()=>
-                env.logger.debug "Republish publishState: " + _device.config.id
-                @adapters[_device.config.id].publishState()
-              , 5000)
 
       super()
 
@@ -244,10 +225,11 @@ module.exports = (env) =>
           @adapters[device.id] = _newAdapter
           resolve(_newAdapter)
         else if device instanceof env.devices.HeatingThermostat or (device.config.class).indexOf("Thermostat") >= 0
-          _newAdapter = new heatingThermostatAdapter(device, @client, @discovery_prefix, @device_prefix)
+          _newAdapter = new heatingThermostatAdapter(device, @client, @discovery_prefix, @device_prefix, @)
           @adapters[device.id] = _newAdapter
+          env.logger.debug "CHECKING: addAdapter device.id: #{device.id}"
           resolve(_newAdapter)
-        else if device.config.class is "DummyShutter"
+        else if device instanceof env.devices.ShutterController #device.config.class is "DummyShutter"
           _newAdapter = new coverAdapter(device, @client, @discovery_prefix, @device_prefix)
           @adapters[device.id] = _newAdapter
           resolve(_newAdapter)
@@ -265,6 +247,7 @@ module.exports = (env) =>
         resolve()
       )
 
+    ###
     _initDevices: () =>
       return new Promise((resolve,reject) =>
         @adapters = {}
@@ -277,16 +260,21 @@ module.exports = (env) =>
             do (device) =>
               nrOfDevices += 1
               @_addDevice(device)
-              .then(()=>
-                env.logger.debug "Device '#{device.id}' added"
-              ).catch((err)=>
+              .then () =>
+                _i = _device.id
+                @adapters[_i].on 'ready', @readyHandler = (id)=>
+                  env.logger.debug "Adapter is ready, id: #{id}"
+                  @adapters[id].publishDiscovery()
+                  @adapters[id].setStatus(on)
+                  @adapters[id].publishState()
+              .catch (err)=>
                 env.logger.error "Error " + err
                 reject()
-              )
           else
             env.logger.info "Device '#{_device}' not found, please remove from config!"
         resolve(nrOfDevices)
       )
+    ###
 
     getAdapterId: (topic) =>
       # topic is in format <@discovery_prefix>/<device prefix>_<device id>/...
@@ -302,10 +290,10 @@ module.exports = (env) =>
         _deviceId = _items[1].split("_")[1] #.split("_").join("-")
         if _deviceId?
           env.logger.debug "Look for adapter for device: " + _deviceId
-          _adapter = _.find(@adapters, (a)=> _deviceId.indexOf(a.id)>= 0)
+          _adapter = _.find(_.keys(@adapters), (k)=> _deviceId.indexOf(k)>= 0)
           if _adapter?
             env.logger.debug "Adapter found for device: " + _deviceId
-            return _adapter.id
+            return _deviceId
           else
             #env.logger.debug "Adapter for topic #{topic} not found"
             return null
@@ -323,6 +311,7 @@ module.exports = (env) =>
       @client.removeListener 'disconnect', @clientDisconnectHandler
       @client.removeListener 'message', @clientMessageHandler
       @client.removeListener 'error', @clientErrorHandler
+      @client.removeListener 'end', @clientEndHandler
       @client.removeListener 'end', @clientEndHandler
       for i, _adapter of @adapters
         if @adapters[i].setStatus?

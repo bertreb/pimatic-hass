@@ -32,6 +32,17 @@ module.exports = (env) ->
       if @device.hasAttribute('presence')
         @hasPresenceSensor = true
         @device.on 'presence', @presenceHandler
+      
+      @publishDiscovery()
+      .then (id)=>
+        return @setStatus(on)
+      .then ()=>
+        return @publishState()
+      .finally ()=>
+        env.logger.debug "Started BinarySensorAdapter #{@id}"
+      .catch (err)=>
+        env.logger.error "Error init BinarySensorAdapter " + err
+
 
     handleMessage: (packet) =>
       _items = (packet.topic).split('/')
@@ -40,56 +51,44 @@ module.exports = (env) ->
       env.logger.debug "Action binary_sensor no action needed"
 
     clearDiscovery: () =>
-      return new Promise((resolve,reject) =>
-        if @hasContactSensor
-          _topic = @discoveryId + '/binary_sensor/' + @hassDeviceId + 'C/config'
-          env.logger.debug "Discovery cleared _topic: " + _topic 
-          @client.publish(_topic, null)
-        if @hasPresenceSensor
-          _topic2 = @discoveryId + '/binary_sensor/' + @hassDeviceId + 'P/config'
-          env.logger.debug "Discovery cleared _topic: " + _topic2 
-          @client.publish(_topic2, null)
-        resolve()
-      )
+      if @hasContactSensor
+        _topic = @discoveryId + '/binary_sensor/' + @hassDeviceId + 'C/config'
+        env.logger.debug "Discovery cleared #{@id} topic: " + _topic 
+        @client.publish(_topic, null)
+      if @hasPresenceSensor
+        _topic2 = @discoveryId + '/binary_sensor/' + @hassDeviceId + 'P/config'
+        env.logger.debug "Discovery cleared {@id topic: " + _topic2 
+        @client.publish(_topic2, null)
 
     publishDiscovery: () =>
-      return new Promise((resolve,reject) =>
-        if @hasContactSensor
-          _configC = 
-            name: hassDeviceFriendlyName + " contact"
-            unique_id: @hassDeviceId
-            stat_t: @discoveryId + '/binary_sensor/' + @hassDeviceId + 'C/state'
-            device_class: "opening"
-            availability_topic: @discoveryId + '/' + @hassDeviceId + '/status'
-            payload_available: "online"
-            payload_not_available: "offline"
-  
-          _topic = @discoveryId + '/binary_sensor/' + @hassDeviceId + 'C/config'
-          env.logger.debug "Publish discover _topic: " + _topic 
-          env.logger.debug "Publish discover _configContact: " + JSON.stringify(_configC)
-          _options =
-            qos : 1
-          @client.publish(_topic, JSON.stringify(_configC), _options, (err) =>
-            if err
-              env.logger.error "Error publishing Discovery " + err
-          )
-        if @hasPresenceSensor
-          _configP = 
-            name: hassDeviceFriendlyName + " motion"
-            unique_id: @hassDeviceId
-            stat_t: @discoveryId + '/binary_sensor/' + @hassDeviceId + 'P/state'
-            device_class: "motion"
-          _topic2 = @discoveryId + '/binary_sensor/' + @hassDeviceId + 'P/config'
-          env.logger.debug "Publish discover _topic: " + _topic2
-          env.logger.debug "Publish discover _configPresence: " + JSON.stringify(_configP)
-          _options =
-            qos : 1
-          @client.publish(_topic2, JSON.stringify(_configP), _options, (err) =>
-            if err
-              env.logger.error "Error publishing Discovery " + err
-          )
-        resolve(@id)
-      )
+      if @hasContactSensor
+        _configC = 
+          name: hassDeviceFriendlyName + " contact"
+          unique_id: @hassDeviceId
+          stat_t: @discoveryId + '/binary_sensor/' + @hassDeviceId + 'C/state'
+          device_class: "opening"
+          availability_topic: @discoveryId + '/' + @hassDeviceId + '/status'
+          payload_available: "online"
+          payload_not_available: "offline"
+      
+        _topic = @discoveryId + '/binary_sensor/' + @hassDeviceId + 'C/config'
+        env.logger.debug "Publish discovery contact #{@id}, topic: " + _topic + ", config: " + JSON.stringify(_configC)
+        _options =
+          qos : 2
+          retain: true
+        @client.publish(_topic, JSON.stringify(_configC), _options)
+      if @hasPresenceSensor
+        _configP = 
+          name: hassDeviceFriendlyName + " motion"
+          unique_id: @hassDeviceId
+          stat_t: @discoveryId + '/binary_sensor/' + @hassDeviceId + 'P/state'
+          device_class: "motion"
+        _topic2 = @discoveryId + '/binary_sensor/' + @hassDeviceId + 'P/config'
+        env.logger.debug "Publish discovery presence #{@id}, topic: " + _topic2 + ", config: " + JSON.stringify(_configP)
+        _options =
+          qos : 2
+          retain: true
+        @client.publish(_topic2, JSON.stringify(_configP), _options)
 
     publishState: () =>
       if @hasContactSensor
@@ -97,7 +96,7 @@ module.exports = (env) ->
         .then((contact)=>
           if contact then _state = "ON" else _state = "OFF"
           _topic = @discoveryId + '/binary_sensor/' + @hassDeviceId + 'C/state'
-          env.logger.debug "Publish contact: " + _topic + ", _state: " + _state
+          env.logger.debug "Publish state contact: " + _topic + ", _state: " + _state
           _options =
             qos : 1
           @client.publish(_topic, String _state)
@@ -107,9 +106,9 @@ module.exports = (env) ->
         .then((presence)=>
           if presence then _state = "ON" else _state = "OFF"
           _topic2 = @discoveryId + '/binary_sensor/' + @hassDeviceId + 'P/state'
-          env.logger.debug "Publish presence: " + _topic2 + ", _state: " + _state
+          env.logger.debug "Publish state presence: " + _topic2 + ", _state: " + _state
           _options =
-            qos : 1
+            qos : 0
           @client.publish(_topic2, String _state)
         )
 
@@ -119,32 +118,21 @@ module.exports = (env) ->
     clearAndDestroy: () =>
       return new Promise((resolve,reject) =>
         @clearDiscovery()
-        .then ()=>
-          return @destroy()
-        .then ()=>
-          resolve()
-        .catch (err) =>
-          env.logger.debug "Error clear and destroy "
-      )
-
-
-      @clearDiscovery()
-      .then () =>
         @destroy()
+        resolve(@id)
+      )
 
     setStatus: (online) =>
       if online then _status = "online" else _status = "offline"
       _topic = @discoveryId + '/' + @hassDeviceId + "/status"
       _options =
-        qos : 0
-      env.logger.debug "Publish status: " + _topic + ", _status: " + _status
-      @client.publish(_topic, String _status) #, _options)
+        retain: true
+        qos : 2
+      env.logger.debug "Publish status: " + _topic + ", status: " + _status
+      @client.publish(_topic, String _status, _options)
 
     destroy: ->
-      return new Promise((resolve,reject) =>
-        if @hasContactSensor
-          @device.removeListener 'contact', @contactHandler
-        if @hasPresenceSensor
-          @device.removeListener 'presence', @presenceHandler
-        resolve()
-      )
+      if @hasContactSensor
+        @device.removeListener 'contact', @contactHandler
+      if @hasPresenceSensor
+        @device.removeListener 'presence', @presenceHandler

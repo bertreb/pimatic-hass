@@ -77,12 +77,14 @@ module.exports = (env) ->
           return null
       .then (power)=>
         if power?
-          @state.power = @handlePower(power)
-        return 
+          @state.power = power
+        @publishDiscovery()
+        @setStatus(on)
+        @publishState()
       .finally ()=>
-        env.logger.debug "#{@id} State: " + JSON.stringify(@state,null,2)
+        env.logger.debug "Started CoverAdapter #{@id}"
       .catch (err)=>
-        env.logger.debug "Error init cover " + err
+        env.logger.error "Error init CoverAdapter " + err
 
       @device.on @positionEventName, @positionHandler if @positionEventName?
 
@@ -151,7 +153,7 @@ module.exports = (env) ->
           @publishState()
         , @rollingtime)
 
-      if (String _value) is "OPEN" and @_coverPosition isnt @cover.position.open
+      else if (String _value) is "OPEN" and @_coverPosition isnt @cover.position.open
         @state.position = "opening"
         @publishState()
         @rollingTimer = setTimeout(()=>
@@ -161,62 +163,66 @@ module.exports = (env) ->
           @publishState()
         , @rollingtime)
 
-      if (String _value) is "STOP"
+      else if (String _value) is "STOP"
         @device.moveToPosition("stopped")
         @state.position = "stopped"
         @_coverPosition = @cover.position.stopped
         @publishState()
 
+      else if (String _value) is "CLOSE" and @_coverPosition is @cover.position.down
+        @device.moveToPosition("down")
+        @state.position = "closed"
+        @_coverPosition = @cover.position.closed
+        @publishState()
+
+      else
+        env.logger.debug "Message for Cover not found, resetting to closed cover"
+        @state.position = "closing"
+        @publishState()
+        @rollingTimer = setTimeout(()=>
+          @device.moveToPosition("down")
+          @state.position = "closed"
+          @_coverPosition = @cover.position.closed
+          @publishState()
+        , @rollingtime)
+
+
     clearDiscovery: () =>
-      return new Promise((resolve,reject) =>
         _topic = @discoveryId + '/cover/' + @hassDeviceId + '/config'
         env.logger.debug "Discovery cleared _topic: " + _topic 
-        @client.publish(_topic, null, (err)=>
-          if err
-            env.logger.error "Error publishing Discovery " + err
-            reject()
-          resolve(@id)
-        )
-      )
+        @client.publish(_topic, null)
 
     publishDiscovery: () =>
-      return new Promise((resolve,reject) =>
-        _config = 
-          name: @hassDeviceFriendlyName #@hassDeviceId
-          unique_id: @hassDeviceId
-          cmd_t: @discoveryId + '/' + @hassDeviceId + '/set'
-          stat_t: @discoveryId + '/' + @hassDeviceId + '/state'
-          state_open: "open"
-          state_opening: "opening"
-          state_closed: "closed"
-          state_closing: "closing"
-          availability_topic: @discoveryId + '/' + @hassDeviceId + '/status'
-          payload_available: "online"
-          payload_not_available: "offline"
+      _config = 
+        name: @hassDeviceFriendlyName #@hassDeviceId
+        unique_id: @hassDeviceId
+        cmd_t: @discoveryId + '/' + @hassDeviceId + '/set'
+        stat_t: @discoveryId + '/' + @hassDeviceId + '/state'
+        state_open: "open"
+        state_opening: "opening"
+        state_closed: "closed"
+        state_closing: "closing"
+        availability_topic: @discoveryId + '/' + @hassDeviceId + '/status'
+        payload_available: "online"
+        payload_not_available: "offline"
 
-        _topic = @discoveryId + '/cover/' + @hassDeviceId + '/config'
-        env.logger.debug "Publish discover _topic: " + _topic 
-        env.logger.debug "Publish discover _config: " + JSON.stringify(_config)
-        _options =
-          qos : 1
-        @client.publish(_topic, JSON.stringify(_config), (err) =>
-          if err
-            env.logger.error "Error publishing Discovery " + err
-            reject()
-          resolve(@id)
-        )
-      )
+      _topic = @discoveryId + '/cover/' + @hassDeviceId + '/config'
+      env.logger.debug "Publish discovery #{@id}, topic: " + _topic + ", config: " + JSON.stringify(_config)
+      _options =
+        qos : 2
+        retain: true
+      @client.publish(_topic, JSON.stringify(_config), _options)
 
     publishState: () =>
-
       # publish position only
       _position = @state.position
 
       _topic = @discoveryId + '/' + @hassDeviceId + '/state'
       _options =
         qos : 0
-      env.logger.debug "Publish cover: " + _topic + ", _state: " + _position
+      env.logger.debug "Publish cover #{@id}: " + _topic + ", position: " + _position
       @client.publish(_topic, String _position) #, _options)
+      Promise.resolve()
 
     update: () ->
       env.logger.debug "Update switch not implemented"
@@ -224,27 +230,21 @@ module.exports = (env) ->
     clearAndDestroy: () =>
       return new Promise((resolve,reject) =>
         @clearDiscovery()
-        .then ()=>
-          return @destroy()
-        .then ()=>
-          resolve()
-        .catch (err) =>
-          env.logger.debug "Error clear and destroy Switch"
+        @destroy()
+        resolve(@id)
       )
 
     setStatus: (online) =>
       if online then _status = "online" else _status = "offline"
       _topic = @discoveryId + '/' + @hassDeviceId + "/status"
       _options =
-        qos : 0
-      env.logger.debug "Publish status: " + _topic + ", _status: " + _status
-      @client.publish(_topic, String _status) #, _options)
+        qos : 2
+        retain: true
+      env.logger.debug "Publish status #{@id}: " + _topic + ", status: " + _status
+      @client.publish(_topic, String _status, _options)
 
     destroy: ->
-      return new Promise((resolve,reject) =>
-        @device.removeListener 'position', @positionHandler if @positionHandler?
-        @device.removeListener 'tilt', @tiltHandler if @tiltHandler?
-        @device.removeListener 'power', @powerHandler if @powerHandler?
-        clearTimeout(@rollingTimer) if @rollingTimer?
-        resolve()
-      )
+      @device.removeListener 'position', @positionHandler if @positionHandler?
+      @device.removeListener 'tilt', @tiltHandler if @tiltHandler?
+      @device.removeListener 'power', @powerHandler if @powerHandler?
+      clearTimeout(@rollingTimer) if @rollingTimer?

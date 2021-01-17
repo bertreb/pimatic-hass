@@ -15,38 +15,37 @@ module.exports = (env) ->
       @discovery_prefix = discovery_prefix
       @hassDevices = {}
 
-      for _variable in device.config.variables
+      #for _variable in device.config.variables
+      #  env.logger.debug "Adding variable: " + _variable.name
+      #  @hassDevices[_variable.name] = new variableManager(@device, _variable, @client, discovery_prefix, device_prefix)
+      Promise.each(device.config.variables, (_variable)=>
         env.logger.debug "Adding variable: " + _variable.name
-        @hassDevices[_variable.name] = new variableManager(@device, _variable, @client, discovery_prefix, device_prefix)
+        @hassDevices[_variable.name] = new variableManager(@device, _variable, @client, @discovery_prefix, device_prefix)
+      )
+      .then ()=>
+        @publishDiscovery()
+        @setStatus(on)
+        @publishState()
+      .finally ()=>
+        env.logger.debug "Started VariablesAdapter #{@id}"
+      .catch (err)=>
+        env.logger.error "Error init VariablesAdapter " + err
 
     publishState: () =>
       for i, variable of @hassDevices
-        variable.publishState()
+        @hassDevices[i].publishState()
 
     publishDiscovery: () =>
-      return new Promise((resolve,reject) =>
-        publishDiscoveries = []
-        for i, variable of @hassDevices
-          publishDiscoveries.push variable.publishDiscovery()
-          Promise.all(publishDiscoveries)
-          .then ()=>
-            resolve @id
-        )
+      for i, variable of @hassDevices
+        @hassDevices[i].publishDiscovery()
 
     clearAndDestroy: () =>
       return new Promise((resolve,reject) =>
-        clears =[]
-        destroys =[]
         for i, variable of @hassDevices
-          clears.push @hassDevices[i].clearDiscovery()
-          destroys.push @hassDevices[i].destroy()
-        Promise.all(clears)
-        .then ()=>
-          return Promise.all(destroys)
-        .then ()=>
-          resolve()
-        .catch (err) =>
-          env.logger.debug "Error clear and destroy "
+          @hassDevices[i].clearDiscovery()
+        for i, variable of @hassDevices
+          @hassDevices[i].destroy()
+        resolve()
       )
             
     clearDiscovery: () =>
@@ -85,15 +84,12 @@ module.exports = (env) ->
         )
 
     setStatus: (online) =>
-      for i, _variable of @hassDevices
+      for i, variable of @hassDevices
         @hassDevices[i].setStatus(online)
 
     destroy: ->
-      return new Promise((resolve,reject) =>
-        for i,variable of @hassDevices
-          @hassDevices[i].destroy()
-        resolve()
-      )
+      for i,variable of @hassDevices
+        @hassDevices[i].destroy()
 
 
   class variableManager extends events.EventEmitter
@@ -145,80 +141,56 @@ module.exports = (env) ->
       return @device_class
 
     clearDiscovery: () =>
-      return new Promise((resolve,reject) =>
-        _topic = @discoveryId + '/sensor/' + @hassDeviceId + '/config'
-        env.logger.debug "Discovery cleared _topic: " + _topic 
-        @client.publish(_topic, null, (err) =>
-          if err
-            env.logger.error "Error publishing Discovery Variable  " + err
-            reject()
-          resolve()
-        )
-      )
+      _topic = @discoveryId + '/sensor/' + @hassDeviceId + '/config'
+      env.logger.debug "Discovery cleared _topic: " + _topic 
+      @client.publish(_topic, null)
 
     publishDiscovery: () =>
-      return new Promise((resolve,reject) =>
-        _configVar = 
-          name: @hassDeviceFriendlyName
-          unique_id :@hassDeviceId
-          state_topic: @discoveryId + '/sensor/' + @hassDeviceId + "/state"
-          unit_of_measurement: @unit
-          value_template: "{{ value_json.variable}}"
-          availability_topic: @discoveryId + '/' + @hassDeviceId + '/status'
-          payload_available: "online"
-          payload_not_available: "offline"
-        _deviceClass = @getDeviceClass()
-        if _deviceClass?
-          _configVar["device_class"] = _deviceClass
-        _topic = @discoveryId + '/sensor/' + @hassDeviceId + '/config'
-        env.logger.debug "Publish discover _topic: " + _topic 
-        env.logger.debug "Publish discover _config: " + JSON.stringify(_configVar)
-        _options =
-          qos : 1
-        @client.publish(_topic, JSON.stringify(_configVar), (err) =>
-          if err
-            env.logger.error "Error publishing Discovery Variable  " + err
-            reject()
-          resolve(@variable.name)
-        )
-      )
+      _configVar = 
+        name: @hassDeviceFriendlyName
+        unique_id :@hassDeviceId
+        state_topic: @discoveryId + '/sensor/' + @hassDeviceId + "/state"
+        unit_of_measurement: @unit
+        value_template: "{{ value_json.variable}}"
+        availability_topic: @discoveryId + '/' + @hassDeviceId + '/status'
+        payload_available: "online"
+        payload_not_available: "offline"
+      _deviceClass = @getDeviceClass()
+      if _deviceClass?
+        _configVar["device_class"] = _deviceClass
+      _topic = @discoveryId + '/sensor/' + @hassDeviceId + '/config'
+      env.logger.debug "Publish discovery #{@id}, topic: " + _topic + ", config: " + JSON.stringify(_configVar)
+      _options =
+        retain : true
+        qos: 2
+      @client.publish(_topic, JSON.stringify(_configVar), _options)
 
     publishState: () =>
-      return new Promise((resolve,reject) =>
-        try
-          @device[@_getVar]()
-          .then (val)=>
-            _topic = @discoveryId + '/sensor/' + @hassDeviceId + "/state"
-            _payload =
-              variable: String val
-            env.logger.debug "_stateTopic: " + _topic + ",  payload: " +  JSON.stringify(_payload)
-            _options =
-              qos : 1
-            @client.publish(_topic, JSON.stringify(_payload), (err) =>
-              if err
-                env.logger.error "Error publishing state Variable  " + err
-                reject()
-              resolve()
-            )
-          .catch (err)=>
-            env.logger.debug "handled error getting variable " + @_getVar + ", err: " + JSON.stringify(err,null,2)
-        catch err
-          env.logger.debug "handled error in @_getVar: " + @_getVar + ", err: " + JSON.stringify(err,null,2) 
-      )
+      try
+        @device[@_getVar]()
+        .then (val)=>
+          _topic = @discoveryId + '/sensor/' + @hassDeviceId + "/state"
+          _payload =
+            variable: String val
+          env.logger.debug "PublishState: " + _topic + ",  payload: " +  JSON.stringify(_payload)
+          _options =
+            retain : true
+          @client.publish(_topic, JSON.stringify(_payload), _options)
+        .catch (err)=>
+          env.logger.debug "handled error getting variable " + @_getVar + ", err: " + JSON.stringify(err,null,2)
+      catch err
+        env.logger.debug "handled error in @_getVar: " + @_getVar + ", err: " + JSON.stringify(err,null,2) 
 
     setStatus: (online) =>
       if online then _status = "online" else _status = "offline"
       _topic = @discoveryId + '/' + @hassDeviceId + "/status"
       _options =
-        qos : 0
-      env.logger.debug "Publish status: " + _topic + ", _status: " + _status
-      @client.publish(_topic, String _status) #, _options)
+        retain : true
+        qos: 2
+      env.logger.debug "Publish status: " + _topic + ", status: " + _status
+      @client.publish(_topic, String _status, _options)
 
     destroy: ->
-      return new Promise((resolve,reject) =>
-        @device.removeListener @_variableName, @[@_handlerName]
-        #@clearDiscovery()
-        resolve()
-      )
+      @device.removeListener @_variableName, @[@_handlerName] if  @[@_handlerName]?
 
   module.exports = VariablesAdapter

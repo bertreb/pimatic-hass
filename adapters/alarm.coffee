@@ -19,6 +19,18 @@ module.exports = (env) ->
 
       @code = @device._pin ? "0000"
 
+      @device.getState()
+      .then (state)=>
+        @_state = state
+        return @publishDiscovery()
+      .then (id)=>
+        @setStatus(on)
+        @publishState()
+        env.logger.debug "Starting alarmpanel #{@id}"
+      .catch (err)=>
+        env.logger.error "Error init thermostat " + err
+
+
       @alarmStates =
         disarmed: "disarmed"
         armed_home: "armed_home"
@@ -30,10 +42,7 @@ module.exports = (env) ->
         arming: "arming"
         disarming: "disarming"
 
-      @device.getState()
-      .then (state)=>
-        @_state = state
- 
+
       @stateHandler = (state) =>
         env.logger.debug "Alarm state change: " + state
         switch state
@@ -65,6 +74,9 @@ module.exports = (env) ->
       @device.on 'state', @stateHandler
       @device.on 'status', @statusHandler
 
+
+
+
     handleMessage: (packet) =>
       _items = (packet.topic).split('/')
       #_command = _items[1]
@@ -87,53 +99,39 @@ module.exports = (env) ->
           @device.changeArmTo("armednight")
 
     clearDiscovery: () =>
-      return new Promise((resolve,reject) =>
         _topic = @discoveryId + '/switch/' + @hassDeviceId + '/config'
-        env.logger.debug "Discovery cleared _topic: " + _topic 
-        @client.publish(_topic, null, (err)=>
-          if err
-            env.logger.error "Error publishing Discovery " + err
-            reject()
-          resolve(@id)
-        )
-      )
+        env.logger.debug "Discovery cleared topic: " + _topic 
+        @client.publish(_topic, null)
 
     publishDiscovery: () =>
-      return new Promise((resolve,reject) =>
-        _config = 
-          name: @hassDeviceFriendlyName #@hassDeviceId
-          unique_id: @hassDeviceId
-          cmd_t: @discoveryId + '/' + @hassDeviceId + '/set'
-          stat_t: @discoveryId + '/' + @hassDeviceId
-          code: @code
-          code_arm_required: false
-          code_disarm_required: true
-          availability_topic: @discoveryId + '/' + @hassDeviceId + '/status'
-          payload_available: "online"
-          payload_not_available: "offline"
+      _config = 
+        name: @hassDeviceFriendlyName #@hassDeviceId
+        unique_id: @hassDeviceId
+        cmd_t: @discoveryId + '/' + @hassDeviceId + '/set'
+        stat_t: @discoveryId + '/' + @hassDeviceId
+        code: @code
+        code_arm_required: false
+        code_disarm_required: true
+        availability_topic: @discoveryId + '/' + @hassDeviceId + '/status'
+        payload_available: "online"
+        payload_not_available: "offline"
 
-        _topic = @discoveryId + '/alarm_control_panel/' + @hassDeviceId + '/config'
-        env.logger.debug "Publish discover _topic: " + _topic 
-        env.logger.debug "Publish discover _config: " + JSON.stringify(_config)
-        _options =
-          qos : 1
-        @client.publish(_topic, JSON.stringify(_config), (err) =>
-          if err
-            env.logger.error "Error publishing Discovery " + err
-            reject()
-          @device.changeSyncedTo(on)
-          resolve(@id)
-        )
-      )
+      _topic = @discoveryId + '/alarm_control_panel/' + @hassDeviceId + '/config'
+      env.logger.debug "Publish discovery #{@id}, topic: " + _topic + ", config: " + JSON.stringify(_config)
+      _options =
+        retain: true
+        qos: 2
+      @client.publish(_topic, JSON.stringify(_config), _options)
+      @device.changeSyncedTo(on)
 
     publishState: () =>
       #if @_state then _state = "armed_away" else _state = "disarmed"
       _state = @_state
       _topic = @discoveryId + '/' + @hassDeviceId
       _options =
-        qos : 0
-      env.logger.debug "Publish alarmpanel: " + _topic + ", _state: " + _state
-      @client.publish(_topic, String _state) #, _options)
+        retain: true
+      env.logger.debug "Publish state alarmpanel: " + _topic + ", _state: " + _state
+      @client.publish(_topic, String _state, _options)
 
     update: () ->
       env.logger.debug "Update alarm not implemented"
@@ -141,26 +139,23 @@ module.exports = (env) ->
     clearAndDestroy: () =>
       return new Promise((resolve,reject) =>
         @clearDiscovery()
-        .then ()=>
-          return @destroy()
-        .then ()=>
-          resolve()
-        .catch (err) =>
-          env.logger.debug "Error clear and destroy alarm"
+        @destroy()
+        resolve(@id)
       )
 
     setStatus: (online) =>
+      #return new Promise((resolve,reject) =>
       if online then _status = "online" else _status = "offline"
       _topic = @discoveryId + '/' + @hassDeviceId + "/status"
       _options =
-        qos : 0
-      env.logger.debug "Publish status: " + _topic + ", _status: " + _status
-      @client.publish(_topic, String _status) #, _options)
-
+        retain: true
+        qos: 2
+      env.logger.debug "Publish status #{@id}: " + _topic + ", status: " + _status
+      @client.publish(_topic, String _status, _options, (err)=>
+        if err
+          env.logger.debug "Error in publish discovery " + err
+      )
 
     destroy: ->
-      return new Promise((resolve,reject) =>
-        @device.removeListener 'state', @stateHandler if @stateHandler?
-        @device.removeListener 'status', @statusHandler if @statusHandler?
-        resolve()
-      )
+      @device.removeListener 'state', @stateHandler if @stateHandler?
+      @device.removeListener 'status', @statusHandler if @statusHandler?

@@ -2,6 +2,7 @@ module.exports = (env) ->
   Promise = env.require 'bluebird'
   assert = env.require 'cassert'
   events = require 'events'
+  util = require 'util'
 
   class SwitchAdapter extends events.EventEmitter
 
@@ -17,15 +18,24 @@ module.exports = (env) ->
       @device_prefix = device_prefix
       @hassDeviceFriendlyName = device_prefix + ": " + device.id
 
-      @device.getState()
-      .then (state) =>
-        @_state = state
  
       @stateHandler = (state) =>
         env.logger.debug "State change switch: " + state
         @_state = state
         @publishState()
       @device.on 'state', @stateHandler
+
+      @device.getState()
+      .then (state) =>
+        @_state = state
+        @publishDiscovery()
+        @setStatus(on)
+        @publishState()
+      .finally ()=>
+        env.logger.debug "Started SwitchAdapter #{@id}"
+      .catch (err)=>
+        env.logger.error "Error init SwitchAdapter " + err
+
 
     handleMessage: (packet) =>
       _items = (packet.topic).split('/')
@@ -42,39 +52,29 @@ module.exports = (env) ->
         #)
 
     clearDiscovery: () =>
-      return new Promise((resolve,reject) =>
-        _topic = @discoveryId + '/switch/' + @hassDeviceId + '/config'
-        env.logger.debug "Discovery cleared _topic: " + _topic 
-        @client.publish(_topic, null, (err)=>
-          if err
-            env.logger.error "Error publishing Discovery " + err
-            reject()
-          resolve(@id)
-        )
-      )
+      _topic = @discoveryId + '/switch/' + @hassDeviceId + '/config'
+      env.logger.debug "Discovery cleared _topic: " + _topic 
+      @client.publish(_topic, null)
 
     publishDiscovery: () =>
-      return new Promise((resolve,reject) =>
-        _config = 
-          name: @hassDeviceFriendlyName #@hassDeviceId
-          unique_id: @hassDeviceId
-          cmd_t: @discoveryId + '/' + @hassDeviceId + '/set'
-          stat_t: @discoveryId + '/' + @hassDeviceId
-          availability_topic: @discoveryId + '/' + @hassDeviceId + '/status'
-          payload_available: "online"
-          payload_not_available: "offline"
+      _config = 
+        name: @hassDeviceFriendlyName #@hassDeviceId
+        unique_id: @hassDeviceId
+        cmd_t: @discoveryId + '/' + @hassDeviceId + '/set'
+        stat_t: @discoveryId + '/' + @hassDeviceId
+        availability_topic: @discoveryId + '/' + @hassDeviceId + '/status'
+        payload_available: "online"
+        payload_not_available: "offline"
 
-        _topic = @discoveryId + '/switch/' + @hassDeviceId + '/config'
-        env.logger.debug "Publish discover _topic: " + _topic 
-        env.logger.debug "Publish discover _config: " + JSON.stringify(_config)
-        _options =
-          qos : 1
-        @client.publish(_topic, JSON.stringify(_config), (err) =>
-          if err
-            env.logger.error "Error publishing Discovery " + err
-            reject()
-          resolve(@id)
-        )
+      _topic = @discoveryId + '/switch/' + @hassDeviceId + '/config'
+      env.logger.debug "Publish discovery #{@id}, topic: " + _topic + ", config: " + JSON.stringify(_config)
+      _options =
+        qos : 2
+        retain: true
+      @client.publish(_topic, JSON.stringify(_config), _options, (err,res) =>
+        #env.logger.debug "res " + JSON.stringify(res,null,2)
+        if err
+          env.logger.error "Error publishing Discovery " + err
       )
 
     publishState: () =>
@@ -83,35 +83,31 @@ module.exports = (env) ->
       _options =
         qos : 0
       env.logger.debug "Publish state: " + _topic + ", _state: " + _state
-      @client.publish(_topic, String _state) #, _options)
+      @client.publish(_topic, String(_state)) #, _options)
+      Promise.resolve()
 
 
     update: () ->
       env.logger.debug "Update switch not implemented"
 
-
     clearAndDestroy: () =>
       return new Promise((resolve,reject) =>
         @clearDiscovery()
-        .then ()=>
-          return @destroy()
-        .then ()=>
-          resolve()
-        .catch (err) =>
-          env.logger.debug "Error clear and destroy Switch"
+        @destroy()
+        resolve(@id)
       )
 
     setStatus: (online) =>
       if online then _status = "online" else _status = "offline"
       _topic = @discoveryId + '/' + @hassDeviceId + "/status"
       _options =
-        qos : 0
-      env.logger.debug "Publish status: " + _topic + ", _status: " + _status
-      @client.publish(_topic, String _status) #, _options)
-
+        qos : 2
+        retain: true
+      env.logger.debug "Publish switch status: " + _topic + ", status: " + _status
+      @client.publish(_topic, String _status, _options, (err,res)=>
+        if err
+          env.logger.error "Error publishing online switch  " + err
+      )
 
     destroy: ->
-      return new Promise((resolve,reject) =>
-        @device.removeListener 'state', @stateHandler if @stateHandler?
-        resolve()
-      )
+      @device.removeListener 'state', @stateHandler if @stateHandler?

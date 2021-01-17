@@ -59,3 +59,5 @@
 	* fix availablity status
 * 20210114, v.0.2.29
 	* added support for Shutter and AlarmPanel
+* 20210117, v.0.3.0
+	* code optimalisation of mqtt handling and restart

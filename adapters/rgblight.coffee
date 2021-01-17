@@ -18,7 +18,6 @@ module.exports = (env) ->
 
       @saturation = 0
       @lightness = 0
-      @publishState()
 
       @dimlevelHandler = (dimlevel) =>
         env.logger.debug "dimlevel change dimmer: " + dimlevel
@@ -36,6 +35,10 @@ module.exports = (env) ->
         @publishState()
       @device.on 'hue', @hueHandler
 
+      @publishDiscovery()
+      @setStatus(on)
+      @publishState()
+      env.logger.debug "Started RGBLightAdapter #{@id}"
 
     handleMessage: (packet) =>
       #env.logger.debug "Handlemessage packet: " + JSON.stringify(packet,null,2)
@@ -56,26 +59,26 @@ module.exports = (env) ->
           if (String _parsedValue.state) == "ON" then _newState = on else _newState = off
           @device.getState()
           .then((state)=>
-            env.logger.info "_newState: " + _newState + ", state: " + state
-            unless _newState is state
-              if _newState is on then @device.changeDimlevelTo(100)
-              if _newState is off then @device.changeDimlevelTo(0)
-              @device.changeStateTo(_newState)
-              .then(()=>
-                @publishState()
-              ).catch(()=>
-              )
+            env.logger.debug "_newState: " + _newState + ", state: " + state
+            #unless _newState is state
+            if _newState is on then @device.changeDimlevelTo(100)
+            if _newState is off then @device.changeDimlevelTo(0)
+            @device.changeStateTo(_newState)
+            .then(()=>
+              @publishState()
+            ).catch(()=>
+            )
           ).catch((err)=>
             env.logger.error "Error in getState: " + err
           )
         else
-          env.logger.info "no handling yet"
+          env.logger.debug "no handling yet"
         
         if _parsedValue.brightness?
           _newDimlevel = map((Number _parsedValue.brightness),0,255,0,100)
           @device.getDimlevel()
           .then((dimlevel) =>
-            env.logger.info "_newDimlevel: " + _newDimlevel + ", dimlevel: " + dimlevel
+            env.logger.debug "_newDimlevel: " + _newDimlevel + ", dimlevel: " + dimlevel
             unless _newDimlevel is dimlevel
               @device.getState()
               .then((state)=>
@@ -93,13 +96,13 @@ module.exports = (env) ->
           _newHexColor = convert.rgb.hex(_parsedValue.color.r,_parsedValue.color.g,_parsedValue.color.b)
           _newHsl = convert.rgb.hsl(_parsedValue.color.r,_parsedValue.color.g,_parsedValue.color.b)
           _newHue = _newHsl[0]
-          env.logger.info "_newHsl: " + _newHsl
+          env.logger.debug "_newHsl: " + _newHsl
           @saturation = _newHsl[1]
           @lightness = _newHsl[2]
-          env.logger.info "@saturation: " + @saturation + ", @lightness: " + @lightness + ", newHex " + _newHexColor
+          env.logger.debug "@saturation: " + @saturation + ", @lightness: " + @lightness + ", newHex " + _newHexColor
           @device.getHue()
           .then((hue) =>
-            env.logger.info ", _newHue: " + _newHue + ", hue: " + hue # _newHue + ", hue: " + hue  
+            env.logger.debug ", _newHue: " + _newHue + ", hue: " + hue # _newHue + ", hue: " + hue  
             unless _newHue == hue
               @device.changeHueTo(_newHue)
               .then(()=>
@@ -110,46 +113,36 @@ module.exports = (env) ->
       return
 
     clearDiscovery: () =>
-      return new Promise((resolve,reject) =>
-        _topic = @discoveryId + '/' + @hassDeviceId + '/config'
-        env.logger.debug "Discovery cleared _topic: " + _topic 
-        @client.publish(_topic, null, ()=>
-          resolve()
-        )
-      )
+      _topic = @discoveryId + '/' + @hassDeviceId + '/config'
+      env.logger.debug "Discovery cleared topic: " + _topic 
+      @client.publish(_topic, null)
 
     publishDiscovery: () =>
-      return new Promise((resolve,reject) =>
-        _config = 
-          name: hassDeviceFriendlyName
-          unique_id: @hassDeviceId
-          cmd_t: @discoveryId + '/' + @hassDeviceId + '/set'
-          stat_t: @discoveryId + '/' + @hassDeviceId + '/state'
-          schema: "json"
-          brightness: true
-          rgb: true
-          availability_topic: @discoveryId + '/' + @hassDeviceId + '/status'
-          payload_available: "online"
-          payload_not_available: "offline"
-          #brightness_state_topic: @discoveryId + '/' + @device.id + '/brightness'
-          #brightness_command_topic: @discoveryId + '/' + @device.id + '/brightness/set'
-          #rgb_state_topic: @discoveryId + '/' + @device.id + '/rgb'
-          #rgb_command_topic: @discoveryId + '/' + @device.id + '/rgb/set'
-          #state_value_template: "{{ value_json.state }}"
-          #brightness_value_template: "{{ value_json.brightness }}"
-          #rgb_value_template: "{{ value_json.rgb | join(',') }}"
-          #optimistic: false
-        _topic = @discoveryId + '/light/' + @hassDeviceId + '/config'
-        env.logger.debug "Publish discover _topic: " + _topic 
-        env.logger.debug "Publish discover _config: " + JSON.stringify(_config)
-        _options =
-          qos : 1
-        @client.publish(_topic, JSON.stringify(_config), (err) =>
-          if err
-            env.logger.error "Error publishing Discovery " + err
-        )
-        resolve()
-      )
+      _config = 
+        name: hassDeviceFriendlyName
+        unique_id: @hassDeviceId
+        cmd_t: @discoveryId + '/' + @hassDeviceId + '/set'
+        stat_t: @discoveryId + '/' + @hassDeviceId + '/state'
+        schema: "json"
+        brightness: true
+        rgb: true
+        availability_topic: @discoveryId + '/' + @hassDeviceId + '/status'
+        payload_available: "online"
+        payload_not_available: "offline"
+        #brightness_state_topic: @discoveryId + '/' + @device.id + '/brightness'
+        #brightness_command_topic: @discoveryId + '/' + @device.id + '/brightness/set'
+        #rgb_state_topic: @discoveryId + '/' + @device.id + '/rgb'
+        #rgb_command_topic: @discoveryId + '/' + @device.id + '/rgb/set'
+        #state_value_template: "{{ value_json.state }}"
+        #brightness_value_template: "{{ value_json.brightness }}"
+        #rgb_value_template: "{{ value_json.rgb | join(',') }}"
+        #optimistic: false
+      _topic = @discoveryId + '/light/' + @hassDeviceId + '/config'
+      env.logger.debug "Publish discovery #{@id}, topic: " + _topic + ", config: " + JSON.stringify(_config)
+      _options =
+        qos : 2
+        retain: true
+      @client.publish(_topic, JSON.stringify(_config), _options)
 
     publishState: () =>
       @device.getState()
@@ -224,26 +217,20 @@ module.exports = (env) ->
     clearAndDestroy: () =>
       return new Promise((resolve,reject) =>
         @clearDiscovery()
-        .then ()=>
-          return @destroy()
-        .then ()=>
-          resolve()
-        .catch (err) =>
-          env.logger.debug "Error clear and destroy "
+        @destroy()
+        resolve(@id)
       )
 
     setStatus: (online) =>
       if online then _status = "online" else _status = "offline"
       _topic = @discoveryId + '/' + @hassDeviceId + "/status"
       _options =
-        qos : 0
-      env.logger.debug "Publish status: " + _topic + ", _status: " + _status
-      @client.publish(_topic, String _status) #, _options)
+        qos : 2
+        retain: true
+      env.logger.debug "Publish status #{@id}: " + _topic + ", status: " + _status
+      @client.publish(_topic, String _status, _options)
 
     destroy: ->
-      return new Promise((resolve,reject) =>
-        @device.removeListener 'state', @stateHandler
-        @device.removeListener 'dimlevel', @dimlevelHandler
-        @device.removeListener 'hue', @hueHandler
-        resolve()
-      )
+      @device.removeListener 'state', @stateHandler
+      @device.removeListener 'dimlevel', @dimlevelHandler
+      @device.removeListener 'hue', @hueHandler
