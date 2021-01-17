@@ -108,7 +108,10 @@ module.exports = (env) =>
               if !_.find(@config.devices, (deviceC) => deviceC == _deviceId )
                 removeHassDevices.push _deviceId
 
-            @nrOfDevices = _.size(@config.devices)
+            if _.size(@config.devices) > 0
+              @_setPresence(true)
+            else
+              @_setPresence(false)
             
             env.logger.debug "addHassDevices: " + JSON.stringify(addHassDevices,null,2)
             env.logger.debug "removeHassDevices: " + JSON.stringify(removeHassDevices,null,2)
