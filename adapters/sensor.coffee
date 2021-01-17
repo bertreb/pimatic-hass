@@ -15,6 +15,9 @@ module.exports = (env) ->
       @discovery_prefix = discovery_prefix
       @hassDevices = {}
 
+      @publishDiscovery()
+
+
       #env.logger.debug "Constructor AttributeAdapter: " + JSON.stringify(@device.attributes,null,2)
         
       Promise.each(_.keys(@device.attributes), (a)=>
@@ -24,8 +27,8 @@ module.exports = (env) ->
       ###
       .then ()=>
         @publishDiscovery()
-        @setStatus(on)
-        @publishState()
+        #@setStatus(on)
+        #@publishState()
       .finally ()=>
         env.logger.debug "Started SensorAdapter #{@id}"
       .catch (err)=>

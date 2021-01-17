@@ -18,6 +18,9 @@ module.exports = (env) ->
       @discoveryId = discovery_prefix
       @hasContactSensor = false
       @hasPresenceSensor = false
+
+      @publishDiscovery()
+
  
       @contactHandler = (contact) =>
         env.logger.debug "State change switch: " + contact

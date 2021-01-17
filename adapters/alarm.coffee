@@ -17,6 +17,8 @@ module.exports = (env) ->
       @device_prefix = device_prefix
       @hassDeviceFriendlyName = device_prefix + ": " + device.id
 
+      @publishDiscovery()
+
       @code = @device._pin ? "0000"
 
       @device.getState()

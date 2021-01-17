@@ -13,6 +13,9 @@ module.exports = (env) ->
       @device = device
       @client = client
       @discovery_prefix = discovery_prefix
+
+      @publishDiscovery()
+
       @hassDevices = {}
 
       #for _variable in device.config.variables

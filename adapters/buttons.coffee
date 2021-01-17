@@ -13,6 +13,9 @@ module.exports = (env) ->
       @device = device
       @client = client
       @discovery_prefix = discovery_prefix
+
+      @publishDiscovery()
+
       @hassDevices = {}
       @activeButton = null
       @keepState = @device.config.enableActiveButton ? true #default is true
@@ -27,8 +30,8 @@ module.exports = (env) ->
       ###
       .then ()=>
         @publishDiscovery()
-        @setStatus(on)
-        @publishState()
+        #@setStatus(on)
+        #@publishState()
       .finally ()=>
         env.logger.debug "Started ButtonsAdapter #{@id}"
       .catch (err)=>

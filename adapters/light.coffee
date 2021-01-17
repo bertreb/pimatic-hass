@@ -15,6 +15,8 @@ module.exports = (env) ->
       @hassDeviceId = device_prefix + "_" + device.id
       @hassDeviceFriendlyName = device_prefix + ": " + device.id
 
+      @publishDiscovery()
+
       @dimlevelHandler = (dimlevel) =>
         env.logger.debug "dimlevel change dimmer: " + dimlevel
         @publishState()

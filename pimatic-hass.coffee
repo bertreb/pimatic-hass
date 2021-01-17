@@ -138,7 +138,7 @@ module.exports = (env) =>
                   @_addDevice(_device)
                   .then (_adapter)=>
                     env.logger.debug "_adapters added " + _device.id
-                    @adapters[_device.id].publishDiscovery()
+                    #@adapters[_device.id].publishDiscovery()
                     setTimeout ()=>
                       @adapters[_device.id].setStatus(on)
                       @adapters[_device.id].publishState()

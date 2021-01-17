@@ -16,6 +16,8 @@ module.exports = (env) ->
       @hassDeviceId = device_prefix + "_" + device.id
       @hassDeviceFriendlyName = device_prefix + ": " + device.id
 
+      @publishDiscovery()
+
       @saturation = 0
       @lightness = 0
 

@@ -18,8 +18,8 @@ module.exports = (env) ->
       @device_prefix = device_prefix
       @hassDeviceFriendlyName = device_prefix + ": " + device.id
 
-      #@publishDiscovery()
- 
+      @publishDiscovery()
+
       @stateHandler = (state) =>
         env.logger.debug "State change switch: " + state
         @_state = state

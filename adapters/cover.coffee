@@ -16,6 +16,9 @@ module.exports = (env) ->
       @hassDeviceId = device_prefix + "_" + device.id
       @device_prefix = device_prefix
       @hassDeviceFriendlyName = device_prefix + ": " + device.id
+
+      @publishDiscovery()
+
       @rollingtime = 20000
 
       @covers = {}

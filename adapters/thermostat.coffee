@@ -142,6 +142,7 @@ module.exports = (env) ->
         temperatureSetpointLow: 18
         temperatureSetpointHigh: 22
 
+      @publishDiscovery()
 
       #env.logger.debug "@device.config.class 2 #{@id} : " + @device.config.class
       #env.logger.debug "@thermostat #{@id} : " + JSON.stringify(@thermostat,null,2) 
@@ -236,7 +237,6 @@ module.exports = (env) ->
         if power?
           @state.power = power
         ###
-        @publishDiscovery()
         @setStatus(on)
         @publishState()
         ###
