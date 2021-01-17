@@ -35,10 +35,12 @@ module.exports = (env) ->
         @publishState()
       @device.on 'hue', @hueHandler
 
+      ###
       @publishDiscovery()
       @setStatus(on)
       @publishState()
       env.logger.debug "Started RGBLightAdapter #{@id}"
+      ###
 
     handleMessage: (packet) =>
       #env.logger.debug "Handlemessage packet: " + JSON.stringify(packet,null,2)

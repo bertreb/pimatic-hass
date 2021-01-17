@@ -22,6 +22,7 @@ module.exports = (env) ->
       @device.getState()
       .then (state)=>
         @_state = state
+      ###
         return @publishDiscovery()
       .then (id)=>
         @setStatus(on)
@@ -29,6 +30,7 @@ module.exports = (env) ->
         env.logger.debug "Starting alarmpanel #{@id}"
       .catch (err)=>
         env.logger.error "Error init thermostat " + err
+      ###
 
 
       @alarmStates =

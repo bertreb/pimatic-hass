@@ -18,24 +18,20 @@ module.exports = (env) ->
       @device_prefix = device_prefix
       @hassDeviceFriendlyName = device_prefix + ": " + device.id
 
+      #@publishDiscovery()
  
       @stateHandler = (state) =>
         env.logger.debug "State change switch: " + state
         @_state = state
         @publishState()
       @device.on 'state', @stateHandler
-
+      
       @device.getState()
       .then (state) =>
         @_state = state
-        @publishDiscovery()
-        @setStatus(on)
-        @publishState()
-      .finally ()=>
         env.logger.debug "Started SwitchAdapter #{@id}"
       .catch (err)=>
         env.logger.error "Error init SwitchAdapter " + err
-
 
     handleMessage: (packet) =>
       _items = (packet.topic).split('/')
@@ -71,11 +67,7 @@ module.exports = (env) ->
       _options =
         qos : 2
         retain: true
-      @client.publish(_topic, JSON.stringify(_config), _options, (err,res) =>
-        #env.logger.debug "res " + JSON.stringify(res,null,2)
-        if err
-          env.logger.error "Error publishing Discovery " + err
-      )
+      @client.publish(_topic, JSON.stringify(_config), _options)
 
     publishState: () =>
       if @_state then _state = "ON" else _state = "OFF"
@@ -104,10 +96,7 @@ module.exports = (env) ->
         qos : 2
         retain: true
       env.logger.debug "Publish switch status: " + _topic + ", status: " + _status
-      @client.publish(_topic, String _status, _options, (err,res)=>
-        if err
-          env.logger.error "Error publishing online switch  " + err
-      )
+      @client.publish(_topic, String _status, _options)
 
     destroy: ->
       @device.removeListener 'state', @stateHandler if @stateHandler?

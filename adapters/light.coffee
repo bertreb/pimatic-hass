@@ -24,11 +24,13 @@ module.exports = (env) ->
         env.logger.debug "State change dimmer: " + state
         @publishState()
       @device.on 'state', @stateHandler
-      
+
+      ###
       @publishDiscovery()
       @setStatus(on)
       @publishState()
       env.logger.debug "Started LightAdapter #{@id}"
+      ###
 
     handleMessage: (packet) =>
       #env.logger.debug "Handlemessage packet: " + JSON.stringify(packet,null,2)

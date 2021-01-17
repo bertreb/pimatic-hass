@@ -138,6 +138,12 @@ module.exports = (env) =>
                   @_addDevice(_device)
                   .then (_adapter)=>
                     env.logger.debug "_adapters added " + _device.id
+                    @adapters[_device.id].publishDiscovery()
+                    setTimeout ()=>
+                      @adapters[_device.id].setStatus(on)
+                      @adapters[_device.id].publishState()
+                      env.logger.debug "Adapter initialized and published to Hass"
+                    , 5000
                   .catch (err) =>
                     env.logger.debug "Device '#{_deviceId}' can't be added " + err
               else

@@ -24,6 +24,7 @@ module.exports = (env) ->
       Promise.each(device.config.buttons, (_button)=>
         @hassDevices[_button.id] = new buttonManager(@device, _button, @client, @discovery_prefix, device_prefix)
       )
+      ###
       .then ()=>
         @publishDiscovery()
         @setStatus(on)
@@ -32,6 +33,7 @@ module.exports = (env) ->
         env.logger.debug "Started ButtonsAdapter #{@id}"
       .catch (err)=>
         env.logger.error "Error init ButtonsAdapter " + err
+      ###
 
       @buttonHandler = (buttonId) =>
         env.logger.debug "Button handler, button '#{buttonId}' pressed, with activeButton = " + @activeButton + ", keepState: " + @keepState

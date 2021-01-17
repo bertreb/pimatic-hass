@@ -21,6 +21,7 @@ module.exports = (env) ->
         env.logger.debug "Adding attribute: " + a
         @hassDevices[a] = new attributeManager(@device, a, @client, @discovery_prefix, device_prefix)
       )
+      ###
       .then ()=>
         @publishDiscovery()
         @setStatus(on)
@@ -29,6 +30,7 @@ module.exports = (env) ->
         env.logger.debug "Started SensorAdapter #{@id}"
       .catch (err)=>
         env.logger.error "Error init SensorAdapter " + err
+      ###
 
     publishState: () =>
       for i, _sensor of @hassDevices

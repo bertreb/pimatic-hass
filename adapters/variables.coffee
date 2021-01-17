@@ -22,6 +22,7 @@ module.exports = (env) ->
         env.logger.debug "Adding variable: " + _variable.name
         @hassDevices[_variable.name] = new variableManager(@device, _variable, @client, @discovery_prefix, device_prefix)
       )
+      ###
       .then ()=>
         @publishDiscovery()
         @setStatus(on)
@@ -30,6 +31,7 @@ module.exports = (env) ->
         env.logger.debug "Started VariablesAdapter #{@id}"
       .catch (err)=>
         env.logger.error "Error init VariablesAdapter " + err
+      ###
 
     publishState: () =>
       for i, variable of @hassDevices

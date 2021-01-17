@@ -33,6 +33,7 @@ module.exports = (env) ->
         @hasPresenceSensor = true
         @device.on 'presence', @presenceHandler
       
+      ###
       @publishDiscovery()
       .then (id)=>
         return @setStatus(on)
@@ -42,6 +43,7 @@ module.exports = (env) ->
         env.logger.debug "Started BinarySensorAdapter #{@id}"
       .catch (err)=>
         env.logger.error "Error init BinarySensorAdapter " + err
+      ###
 
 
     handleMessage: (packet) =>
