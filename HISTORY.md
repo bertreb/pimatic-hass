@@ -65,3 +65,5 @@
 	* update hass online indicator
 * 20210117, v.0.3.3
 	* changed (re)start sequence
+* 20210118, v.0.3.4
+	* debug edits

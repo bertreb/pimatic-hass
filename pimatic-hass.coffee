@@ -50,7 +50,7 @@ module.exports = (env) =>
 
       @discovery_prefix = @plugin.config.discovery_prefix ? @plugin.pluginConfigDef.discovery_prefix.default
       @device_prefix = @plugin.config.device_prefix ? @plugin.pluginConfigDef.device_prefix.default
-
+      @device_prefix_length = @device_prefix.length
 
       ###
       if @plugin.config.mqttProtocol == "MQTTS"
@@ -254,35 +254,6 @@ module.exports = (env) =>
         resolve()
       )
 
-    ###
-    _initDevices: () =>
-      return new Promise((resolve,reject) =>
-        @adapters = {}
-        nrOfDevices = 0
-        for _device,i in @config.devices
-          env.logger.debug "InitDevices _device: " + _device
-          device = @framework.deviceManager.getDeviceById(_device)
-          if device?
-            env.logger.debug "Found device: " + device.id
-            do (device) =>
-              nrOfDevices += 1
-              @_addDevice(device)
-              .then () =>
-                _i = _device.id
-                @adapters[_i].on 'ready', @readyHandler = (id)=>
-                  env.logger.debug "Adapter is ready, id: #{id}"
-                  @adapters[id].publishDiscovery()
-                  @adapters[id].setStatus(on)
-                  @adapters[id].publishState()
-              .catch (err)=>
-                env.logger.error "Error " + err
-                reject()
-          else
-            env.logger.info "Device '#{_device}' not found, please remove from config!"
-        resolve(nrOfDevices)
-      )
-    ###
-
     getAdapterId: (topic) =>
       # topic is in format <@discovery_prefix>/<device prefix>_<device id>/...
       try
@@ -291,10 +262,13 @@ module.exports = (env) =>
           return null
         _items = topic.split('/')
         unless _items[0] is @discovery_prefix
-          env.logger.debug "#{@discovery_prefix} not found " + _items[0]
+          env.logger.debug "Discovery prefix '#{@discovery_prefix}', not found:  " + _items[0]
           return null
-        _device_prefix = _items[1].split("_")[0]
-        _deviceId = _items[1].split("_")[1] #.split("_").join("-")
+        unless _items[1].startsWith(@device_prefix)
+          env.logger.debug "Device_prefix '#{@device_prefix}', not found: " + _items[1]
+          return null
+        _startDeviceId = @device_prefix_length + 1 # counting from 0 + "_" + 1
+        _deviceId = _items[1].substr(_startDeviceId)
         if _deviceId?
           env.logger.debug "Look for adapter for device: " + _deviceId
           _adapter = _.find(_.keys(@adapters), (k)=> _deviceId.indexOf(k)>= 0)
@@ -322,7 +296,7 @@ module.exports = (env) =>
       @client.removeListener 'end', @clientEndHandler
       for i, _adapter of @adapters
         if @adapters[i].setStatus?
-          @adapters[i].setStatus(off)        
+          @adapters[i].setStatus(off)
 
       super()
 

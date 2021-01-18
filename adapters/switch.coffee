@@ -19,6 +19,8 @@ module.exports = (env) ->
       @hassDeviceFriendlyName = device_prefix + ": " + device.id
 
       @publishDiscovery()
+      #@setStatus(on)
+      #@publishState()
 
       @stateHandler = (state) =>
         env.logger.debug "State change switch: " + state
