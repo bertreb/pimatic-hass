@@ -14,7 +14,7 @@ module.exports = (env) ->
       @client = client
       @discovery_prefix = discovery_prefix
 
-      @publishDiscovery()
+      #@publishDiscovery()
 
       @hassDevices = {}
       @activeButton = null
@@ -27,9 +27,9 @@ module.exports = (env) ->
       Promise.each(device.config.buttons, (_button)=>
         @hassDevices[_button.id] = new buttonManager(@device, _button, @client, @discovery_prefix, device_prefix)
       )
-      ###
       .then ()=>
         @publishDiscovery()
+      ###
         #@setStatus(on)
         #@publishState()
       .finally ()=>
