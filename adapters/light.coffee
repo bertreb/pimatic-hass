@@ -27,10 +27,10 @@ module.exports = (env) ->
         @publishState()
       @device.on 'state', @stateHandler
 
+      #@publishDiscovery()
+      #@setStatus(on)
+      #@publishState()
       ###
-      @publishDiscovery()
-      @setStatus(on)
-      @publishState()
       env.logger.debug "Started LightAdapter #{@id}"
       ###
 

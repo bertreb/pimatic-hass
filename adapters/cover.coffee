@@ -81,11 +81,9 @@ module.exports = (env) ->
       .then (power)=>
         if power?
           @state.power = power
-        ###
-        @publishDiscovery()
-        @setStatus(on)
-        @publishState()
-        ###
+        #@publishDiscovery()
+        #@setStatus(on)
+        #@publishState()
       .finally ()=>
         env.logger.debug "Started CoverAdapter #{@id}"
       .catch (err)=>

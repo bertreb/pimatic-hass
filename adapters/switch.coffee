@@ -18,9 +18,6 @@ module.exports = (env) ->
       @device_prefix = device_prefix
       @hassDeviceFriendlyName = device_prefix + ": " + device.id
 
-      @publishDiscovery()
-      #@setStatus(on)
-      #@publishState()
 
       @stateHandler = (state) =>
         env.logger.debug "State change switch: " + state
@@ -31,6 +28,7 @@ module.exports = (env) ->
       @device.getState()
       .then (state) =>
         @_state = state
+        @publishDiscovery()
         env.logger.debug "Started SwitchAdapter #{@id}"
       .catch (err)=>
         env.logger.error "Error init SwitchAdapter " + err
@@ -78,8 +76,6 @@ module.exports = (env) ->
         qos : 0
       env.logger.debug "Publish state: " + _topic + ", _state: " + _state
       @client.publish(_topic, String(_state)) #, _options)
-      Promise.resolve()
-
 
     update: () ->
       env.logger.debug "Update switch not implemented"

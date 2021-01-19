@@ -29,9 +29,9 @@ module.exports = (env) ->
       )
       .then ()=>
         @publishDiscovery()
-      ###
         #@setStatus(on)
         #@publishState()
+      ###
       .finally ()=>
         env.logger.debug "Started ButtonsAdapter #{@id}"
       .catch (err)=>

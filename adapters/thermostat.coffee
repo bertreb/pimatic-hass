@@ -236,10 +236,9 @@ module.exports = (env) ->
       .then (power)=>
         if power?
           @state.power = power
-        ###
-        @setStatus(on)
-        @publishState()
-        ###
+        #@publishDiscovery()
+        #@setStatus(on)
+        #@publishState()
       .finally ()=>
         env.logger.debug "Started ThermostatAdapter #{@id}"
       .catch (err)=>

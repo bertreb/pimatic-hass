@@ -128,6 +128,7 @@ module.exports = (env) =>
 
             for i, _adapter of @adapters
               if @adapters[i].setStatus?
+                env.logger.debug "Restart Status on"
                 @adapters[i].setStatus(on)        
 
             for _deviceId in addHassDevices
@@ -137,8 +138,8 @@ module.exports = (env) =>
                   env.logger.debug "Adding device: " + _device.id
                   @_addDevice(_device)
                   .then (_adapter)=>
-                    env.logger.debug "_adapters added " + _device.id
-                    #@adapters[_device.id].publishDiscovery()
+                    env.logger.debug "_adapter added " + _device.id
+                    @adapters[_device.id].publishDiscovery()
                     setTimeout ()=>
                       @adapters[_device.id].setStatus(on)
                       @adapters[_device.id].publishState()
@@ -181,12 +182,14 @@ module.exports = (env) =>
           @_setPresence(false)
 
       @framework.on 'deviceRemoved', @deviceRemovedListener = (device) =>
-      for i, _adapter of @adapters
-        env.logger.debug "@adapters[i].id: " + @adapters[i].id + ", device.id: " + device.id
-        if @adapters[i].id is device.id
-          @adapters[i].clearAndDestroy()
-          .then (_i)=>
-            delete @adapters[_i]
+        env.logger.debug "Device changed: " + device.config.id
+        unless device.config.id is @id #This Hass device is changed via recreation
+          if @adapters[device.config.id]?
+            _device = device
+            env.logger.debug "One of the used devices is deleted: " + _device.config.id
+            @adapters[_device.config.id].clearAndDestroy()
+            delete @adapters[_device.config.id]
+            env.logger.debug "Adapter deleted for #{_device.id}"
 
       @framework.on 'deviceChanged', @deviceChangedListener = (device) =>
         env.logger.debug "Device changed: " + device.config.id
@@ -195,11 +198,18 @@ module.exports = (env) =>
           if @adapters[device.config.id]?
             _device = device
             env.logger.debug "One of the used devices changed: " + _device.config.id
-            @adapters[_device.config.id].destroy()
+            @adapters[_device.config.id].clearAndDestroy()
             delete @adapters[_device.config.id]
             env.logger.debug "Adapter deleted for #{_device.id}"
             @_addDevice(_device)
-            env.logger.debug "New Adapter added for #{_device.config.id}"
+            .then (_adapter)=>
+              env.logger.debug "_adapter added " + _device.id
+              @adapters[_device.id].publishDiscovery()
+              setTimeout ()=>
+                @adapters[_device.id].setStatus(on)
+                @adapters[_device.id].publishState()
+                env.logger.debug "Adapter initialized and published to Hass"
+              , 5000
 
       super()
 

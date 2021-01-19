@@ -3,6 +3,7 @@ module.exports = (env) ->
   assert = env.require 'cassert'
   events = require 'events'
   _ = require("lodash")
+  BaseMultiSensor = require("./base.coffee")(env)
 
   class SensorAdapter extends events.EventEmitter
 
@@ -20,14 +21,14 @@ module.exports = (env) ->
       #env.logger.debug "Constructor AttributeAdapter: " + JSON.stringify(@device.attributes,null,2)
         
       Promise.each(_.keys(@device.attributes), (a)=>
-        env.logger.debug "Adding attribute: " + a
+        env.logger.debug "Adding sensor attribute: " + a
         @hassDevices[a] = new attributeManager(@device, a, @client, @discovery_prefix, device_prefix)
       )
       .then ()=>
         @publishDiscovery()
+      #  @setStatus(on)
+      #  @publishState()
       ###
-        #@setStatus(on)
-        #@publishState()
       .finally ()=>
         env.logger.debug "Started SensorAdapter #{@id}"
       .catch (err)=>
@@ -94,7 +95,7 @@ module.exports = (env) ->
       for i, _sensor of @hassDevices
         @hassDevices[i].destroy()
 
-  class attributeManager extends events.EventEmitter
+  class attributeManager extends BaseMultiSensor #events.EventEmitter
 
     constructor: (device, attributeName, client, discovery_prefix, device_prefix) ->  
       @name = device.name
@@ -125,6 +126,7 @@ module.exports = (env) ->
       #env.logger.debug "handlemessage sensor -> No action" # + JSON.stringify(packet,null,2)
       return
 
+    ###
     getDeviceClass: (_attribute, _unit, _label, _acronym)=>
 
       if !_unit and !_label and !_acronym and !_attribute then return null
@@ -173,6 +175,7 @@ module.exports = (env) ->
         @device_class = null
       env.logger.debug "getDeviceClass: " + _unit + ", class: " + @device_class
       return @device_class
+    ###
 
     clearDiscovery: () =>
       _topic = @discoveryId + '/sensor/' + @hassDeviceId + '/config'
@@ -188,7 +191,9 @@ module.exports = (env) ->
         availability_topic: @discoveryId + '/' + @hassDeviceId + '/status'
         payload_available: "online"
         payload_not_available: "offline"
+      env.logger.debug "Tot hier 1"
       _deviceClass = @getDeviceClass(@attributeName, @unit, @label, @acronym)
+      env.logger.debug "Tot hier 2" + _deviceClass
       _configVar["device_class"] = _deviceClass if _deviceClass?
       _configVar["unit_of_measurement"] = @unit if @unit?
 

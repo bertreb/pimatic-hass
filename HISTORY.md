@@ -67,3 +67,5 @@
 	* changed (re)start sequence
 * 20210118, v.0.3.5
 	* debug edits
+* 20210119, v.0.3.6
+	* edit used device changes

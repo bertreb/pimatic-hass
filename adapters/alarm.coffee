@@ -20,14 +20,7 @@ module.exports = (env) ->
 
       @code = @device._pin ? "0000"
 
-      @device.getState()
-      .then (state)=>
-        @_state = state
       ###
-        return @publishDiscovery()
-      .then (id)=>
-        @setStatus(on)
-        @publishState()
         env.logger.debug "Starting alarmpanel #{@id}"
       .catch (err)=>
         env.logger.error "Error init thermostat " + err
@@ -77,9 +70,13 @@ module.exports = (env) ->
       @device.on 'state', @stateHandler
       @device.on 'status', @statusHandler
 
-
       @publishDiscovery()
-
+      @device.getState()
+      .then (state)=>
+        @_state = state
+        #@publishDiscovery()
+        #@setStatus(on)
+        #@publishState()
 
     handleMessage: (packet) =>
       _items = (packet.topic).split('/')

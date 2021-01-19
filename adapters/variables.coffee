@@ -3,6 +3,7 @@ module.exports = (env) ->
   assert = env.require 'cassert'
   events = require 'events'
   _ = require("lodash")
+  BaseMultiSensor = require("./base.coffee")(env)
 
   class VariablesAdapter extends events.EventEmitter
 
@@ -27,9 +28,9 @@ module.exports = (env) ->
       )
       .then ()=>
         @publishDiscovery()
+      #  @setStatus(on)
+      #  @publishState()
       ###
-        @setStatus(on)
-        @publishState()
       .finally ()=>
         env.logger.debug "Started VariablesAdapter #{@id}"
       .catch (err)=>
@@ -97,7 +98,7 @@ module.exports = (env) ->
         @hassDevices[i].destroy()
 
 
-  class variableManager extends events.EventEmitter
+  class variableManager extends BaseMultiSensor
 
     constructor: (device, variable, client, discovery_prefix, device_prefix) ->  
       @name = device.name
@@ -127,6 +128,7 @@ module.exports = (env) ->
       #env.logger.debug "handlemessage sensor -> No action" # + JSON.stringify(packet,null,2)
       return
 
+    ###
     getDeviceClass: (_attribute, _unit, _label, _acronym)=>
 
       if !_unit and !_label and !_acronym and !_attribute then return null
@@ -175,6 +177,7 @@ module.exports = (env) ->
         @device_class = null
       env.logger.debug "getDeviceClass: " + _unit + ", class: " + @device_class
       return @device_class
+    ###
 
     clearDiscovery: () =>
       _topic = @discoveryId + '/sensor/' + @hassDeviceId + '/config'
