@@ -69,3 +69,5 @@
 	* debug edits
 * 20210119, v.0.3.6
 	* edit used device changes
+* 20210119, v.0.3.7
+	* fix startup thermostat
