@@ -71,3 +71,5 @@
 	* edit used device changes
 * 20210119, v.0.3.7
 	* fix startup thermostat
+* 20210130, v.0.3.8
+	* fix button handling

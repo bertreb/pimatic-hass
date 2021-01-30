@@ -166,7 +166,7 @@ module.exports = (env) =>
           else
             _adapterId = @getAdapterId(topic)
             if _adapterId?
-              env.logger.debug "Adapter found for topic #{topic}, " +_adapterId
+              env.logger.debug "Adapter found for topic #{topic}, " +_adapterId + ", exists: " + @adapters[_adapterId]?
               @adapters[_adapterId].handleMessage(packet)
 
         # connection error handling
@@ -281,10 +281,11 @@ module.exports = (env) =>
         _deviceId = _items[1].substr(_startDeviceId)
         if _deviceId?
           env.logger.debug "Look for adapter for device: " + _deviceId
+          env.logger.debug "Keys: " + _.keys(@adapters)
           _adapter = _.find(_.keys(@adapters), (k)=> _deviceId.indexOf(k)>= 0)
           if _adapter?
             env.logger.debug "Adapter found for device: " + _deviceId
-            return _deviceId
+            return _adapter
           else
             #env.logger.debug "Adapter for topic #{topic} not found"
             return null
