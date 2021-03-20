@@ -90,7 +90,10 @@ module.exports = (env) ->
     clearDiscovery: () =>
       _topic = @discoveryId + '/light/' + @hassDeviceId + '/config'
       env.logger.debug "Discovery cleared topic: " + _topic 
-      @client.publish(_topic, null)
+      _options =
+        qos : 2
+        retain: true
+      @client.publish(_topic, null, _options)
 
     publishDiscovery: () =>
       _config = 

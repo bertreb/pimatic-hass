@@ -73,3 +73,5 @@
 	* fix startup thermostat
 * 20210130, v.0.3.8
 	* fix button handling
+* 20210320, v.0.3.9
+	* update removal of devices to clear retained messages

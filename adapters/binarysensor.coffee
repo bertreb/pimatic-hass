@@ -56,14 +56,17 @@ module.exports = (env) ->
       env.logger.debug "Action binary_sensor no action needed"
 
     clearDiscovery: () =>
+      _options =
+        qos : 2
+        retain: true
       if @hasContactSensor
         _topic = @discoveryId + '/binary_sensor/' + @hassDeviceId + 'C/config'
         env.logger.debug "Discovery cleared #{@id} topic: " + _topic 
-        @client.publish(_topic, null)
+        @client.publish(_topic, null, _options)
       if @hasPresenceSensor
         _topic2 = @discoveryId + '/binary_sensor/' + @hassDeviceId + 'P/config'
         env.logger.debug "Discovery cleared {@id topic: " + _topic2 
-        @client.publish(_topic2, null)
+        @client.publish(_topic2, null, _options)
 
     publishDiscovery: () =>
       if @hasContactSensor
