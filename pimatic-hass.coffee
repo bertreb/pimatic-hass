@@ -254,6 +254,10 @@ module.exports = (env) =>
           _newAdapter = new variablesAdapter(device, @client, @discovery_prefix, @device_prefix)
           @adapters[device.id] = _newAdapter
           resolve(_newAdapter)
+        else if device.hasAttribute("presence") or device.hasAttribute("contact")
+          _newAdapter = new binarySensorAdapter(device, @client, @discovery_prefix, @device_prefix)
+          @adapters[device.id] = _newAdapter
+          resolve(_newAdapter)
         else if _.size(device.attributes)>0 
           _newAdapter = new sensorAdapter(device, @client, @discovery_prefix, @device_prefix)
           @adapters[device.id] = _newAdapter
@@ -303,7 +307,6 @@ module.exports = (env) =>
       @client.removeListener 'disconnect', @clientDisconnectHandler
       @client.removeListener 'message', @clientMessageHandler
       @client.removeListener 'error', @clientErrorHandler
-      @client.removeListener 'end', @clientEndHandler
       @client.removeListener 'end', @clientEndHandler
       for i, _adapter of @adapters
         if @adapters[i].setStatus?

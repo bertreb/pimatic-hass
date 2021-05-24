@@ -71,7 +71,7 @@ module.exports = (env) ->
     publishDiscovery: () =>
       if @hasContactSensor
         _configC = 
-          name: hassDeviceFriendlyName + " contact"
+          name: @hassDeviceFriendlyName + " contact"
           unique_id: @hassDeviceId
           stat_t: @discoveryId + '/binary_sensor/' + @hassDeviceId + 'C/state'
           device_class: "opening"
@@ -87,7 +87,7 @@ module.exports = (env) ->
         @client.publish(_topic, JSON.stringify(_configC), _options)
       if @hasPresenceSensor
         _configP = 
-          name: hassDeviceFriendlyName + " motion"
+          name: @hassDeviceFriendlyName + " motion"
           unique_id: @hassDeviceId
           stat_t: @discoveryId + '/binary_sensor/' + @hassDeviceId + 'P/state'
           device_class: "motion"

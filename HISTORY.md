@@ -75,3 +75,5 @@
 	* fix button handling
 * 20210320, v.0.3.9
 	* update removal of devices to clear retained messages
+* 20210524, v.0.3.10
+	* fixed motion and contact sensor
