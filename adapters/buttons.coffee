@@ -156,7 +156,7 @@ module.exports = (env) ->
       @pimaticId = discovery_prefix
       @discoveryId = discovery_prefix
       @hassDeviceId = device_prefix + "_" + @device.id + "_" + @button.id
-      @hassDeviceFriendlyName = device_prefix + ": " + device.id + "." + @button.id
+      @hassDeviceFriendlyName = device.name + "." + @button.id
       @_getVar = "get" + (@button.id).charAt(0).toUpperCase() + (@button.id).slice(1)
 
     handleMessage: (buttonId) =>

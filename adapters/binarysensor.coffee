@@ -14,7 +14,7 @@ module.exports = (env) ->
 
       @discoveryId = discovery_prefix
       @hassDeviceId = device_prefix + "_" + device.id
-      @hassDeviceFriendlyName = device_prefix + ": " + device.id
+      @hassDeviceFriendlyName = device.name
       @discoveryId = discovery_prefix
       @hasContactSensor = false
       @hasPresenceSensor = false

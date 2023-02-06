@@ -16,7 +16,7 @@ module.exports = (env) ->
       @discovery_prefix = discovery_prefix
       @discoveryId = discovery_prefix
       @hassDeviceId = device_prefix + "_" + device.id
-      @hassDeviceFriendlyName = device_prefix + ": " + device.id
+      @hassDeviceFriendlyName = device.name
 
       # HASS settings
       @temperatureSetpointItem = "temperatureSetpoint"
