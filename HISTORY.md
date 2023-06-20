@@ -78,4 +78,4 @@
 * 20210524, v.0.3.10
 	* fixed motion and contact sensor
 * 20230620, v.0.3.11
-  * fixed cover position
+	* fixed cover position
