@@ -110,7 +110,7 @@ module.exports = (env) ->
       @discoveryId = discovery_prefix
       @device_prefix = device_prefix
       @hassDeviceId = device_prefix+ "_" + device.id + "_" + @attributeName
-      @hassDeviceFriendlyName = device_prefix + ": " + device.id + "." + @attributeName
+      @hassDeviceFriendlyName = device.name + "." + @attributeName
       @_getVar = "get" + (@attributeName).charAt(0).toUpperCase() + (@attributeName).slice(1)
       env.logger.debug "@unit: " + @unit
 

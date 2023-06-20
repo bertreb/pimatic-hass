@@ -13,7 +13,7 @@ module.exports = (env) ->
       @client = client
       @discoveryId = discovery_prefix
       @hassDeviceId = device_prefix + "_" + device.id
-      @hassDeviceFriendlyName = device_prefix + ": " + device.id
+      @hassDeviceFriendlyName = device.name
 
       @publishDiscovery()
 

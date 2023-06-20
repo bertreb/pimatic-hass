@@ -16,7 +16,7 @@ module.exports = (env) ->
       @discoveryId = discovery_prefix
       @hassDeviceId = device_prefix + "_" + device.id
       @device_prefix = device_prefix
-      @hassDeviceFriendlyName = device_prefix + ": " + device.id
+      @hassDeviceFriendlyName = device.name
 
 
       @stateHandler = (state) =>
