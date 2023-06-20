@@ -147,20 +147,20 @@ module.exports = (env) ->
       _value = packet.payload
       env.logger.debug "Cover payload " + _value + ", @_coverPosition " + @_coverPosition
       if (String _value) is "CLOSE" and @_coverPosition isnt @cover.position.closed
+        @device.moveToPosition("down")
         @state.position = "closing"
         @publishState()
         @rollingTimer = setTimeout(()=>
-          @device.moveToPosition("down")
           @state.position = "closed"
           @_coverPosition = @cover.position.closed
           @publishState()
         , @rollingtime)
 
       else if (String _value) is "OPEN" and @_coverPosition isnt @cover.position.open
+        @device.moveToPosition("up")
         @state.position = "opening"
         @publishState()
         @rollingTimer = setTimeout(()=>
-          @device.moveToPosition("up")
           @state.position = "open"
           @_coverPosition = @cover.position.open
           @publishState()
@@ -180,10 +180,10 @@ module.exports = (env) ->
 
       else
         env.logger.debug "Message for Cover not found, resetting to closed cover"
+        @device.moveToPosition("down")
         @state.position = "closing"
         @publishState()
         @rollingTimer = setTimeout(()=>
-          @device.moveToPosition("down")
           @state.position = "closed"
           @_coverPosition = @cover.position.closed
           @publishState()
